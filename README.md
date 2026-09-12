@@ -65,6 +65,31 @@ cd agent-observer
 node bin/agent-observer.js current
 ```
 
+### Updating
+
+The plugin does not update itself. Both steps are needed:
+
+```
+/plugin marketplace update agent-observer-marketplace
+/reload-plugins
+```
+
+The first fetches the new version. Without the second, the session keeps the
+skill and the script it already loaded, so nothing appears to change.
+
+Claude Code caches each version in its own directory, so `--version` tells you
+what is actually loaded rather than what was published:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/agent-observer.js" --version
+```
+
+Installed with npm instead:
+
+```bash
+npm update -g agent-observer
+```
+
 ## Use
 
 ```bash
@@ -228,18 +253,24 @@ agent which skill to use at which point, and [AGENTS.md](AGENTS.md) states the
 same workflow for agents that do not have the plugin. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
-Releasing is tag-driven:
+CI verifies on Windows, Linux and macOS across Node 18, 20, 22 and 24.
+
+Releasing is tag-driven, and the release workflow refuses to publish unless the
+tag, `package.json`, `plugin.json`, `marketplace.json`, `src/version.js` and the
+changelog all agree:
 
 ```bash
-npm version minor
-node scripts/sync-version.mjs
-# add a CHANGELOG.md entry
-git commit -am "Release v0.2.0" && git push --follow-tags
+node scripts/sync-version.mjs 0.2.0
+# move the Unreleased changelog entries under a 0.2.0 heading
+npm run verify
+git commit -am "Release v0.2.0" && git tag v0.2.0 && git push --follow-tags
 ```
 
-CI verifies on Windows, Linux and macOS across Node 18, 20, 22 and 24. The
-release workflow refuses to publish unless the tag, `package.json`,
-`plugin.json`, `marketplace.json`, `src/version.js` and the changelog all agree.
+Bump the version for anything a user would notice, including a change to
+`SKILL.md`. Claude Code caches the plugin by version, so a fix pushed without a
+bump never reaches an installed copy and `/plugin marketplace update` reports
+success while changing nothing. [docs/releasing.md](docs/releasing.md) has the
+full process and how to choose the number.
 
 ## Licence
 

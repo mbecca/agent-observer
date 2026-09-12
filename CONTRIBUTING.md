@@ -93,16 +93,25 @@ something, say what was wrong. Run `npm run verify` before pushing.
 
 ## Releasing
 
-Maintainers only, and tag-driven:
+Maintainers only. The full process, including how to pick the number and what
+to do about a bad release, is in [docs/releasing.md](docs/releasing.md).
+
+The short version, tag-driven:
 
 ```bash
-npm version minor
-node scripts/sync-version.mjs
-# add the CHANGELOG.md entry
+node scripts/sync-version.mjs 0.2.0
+# move the Unreleased changelog entries under a 0.2.0 heading
+npm run verify
 git commit -am "Release v0.2.0"
+git tag v0.2.0
 git push --follow-tags
 ```
 
 The release workflow refuses to publish unless the tag, `package.json`,
 `plugin.json`, `marketplace.json`, `src/version.js` and the changelog all declare
 the same version.
+
+Bump the version for anything a user would notice, a change to `SKILL.md`
+included. Claude Code caches the plugin by version, so a fix pushed without a
+bump never reaches an installed copy while `/plugin marketplace update` reports
+success.

@@ -20,6 +20,9 @@ All notable changes to this project are documented here. The format follows
   Claude Code offers to enable it when the project is opened and a contributor
   installs nothing by hand.
 - A banner in the README, at `docs/banner.png`.
+- docs/releasing.md: how a change reaches an installed copy, why a version bump
+  is mandatory for the plugin, how to choose the number, and what to do about a
+  bad release. README documents the two update commands a user needs.
 
 ### Changed
 

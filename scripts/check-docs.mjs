@@ -23,6 +23,7 @@ const REQUIRED = [
   ['CONTRIBUTING.md', 'The human entry point.'],
   ['docs/event-format.md', 'The interop contract other tools build against.'],
   ['docs/writing-an-adapter.md', 'Referenced by AGENTS.md and CONTRIBUTING.md.'],
+  ['docs/releasing.md', 'The release process, including why a version bump is mandatory.'],
   ['README.md', null],
   ['CHANGELOG.md', null],
   ['LICENSE', null],

@@ -123,12 +123,17 @@ its own output is useful.
 
 ## Releasing
 
-Maintainers only. Tag-driven, and the version bump matters: Claude Code caches
-the plugin under its version directory, so a fix pushed without a bump never
-reaches an installed copy.
+Maintainers only. Read [docs/releasing.md](docs/releasing.md) before cutting
+one; do not reconstruct the steps from memory.
+
+The part that is easy to get wrong: Claude Code caches the plugin under its
+version directory, so a fix pushed without a version bump never reaches an
+installed copy, and `/plugin marketplace update` reports success while changing
+nothing. Bump for anything a user would notice, `SKILL.md` included.
 
 ```bash
 node scripts/sync-version.mjs 0.2.0   # propagates to all five declarations
-# add the CHANGELOG.md entry
-git commit -am "Release v0.2.0" && git push --follow-tags
+# move the Unreleased changelog entries under a 0.2.0 heading
+npm run verify
+git commit -am "Release v0.2.0" && git tag v0.2.0 && git push --follow-tags
 ```
