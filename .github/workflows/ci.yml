@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The tool reads paths and timestamps, so Windows and POSIX both have to
+        # be exercised, not just the runner that happens to be cheapest.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['18', '20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Parse every file
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Smoke test the CLI
+        run: |
+          node bin/agent-observer.js --version
+          node bin/agent-observer.js --help
+          node bin/agent-observer.js adapters --no-color
+          node bin/agent-observer.js doctor --no-color
+
+  manifests:
+    name: manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate plugin and marketplace manifests
+        run: npm run validate-plugin
+
+      - name: Check every version declaration agrees
+        run: npm run check-version
+
+      - name: Check the package publishes the files the plugin needs
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e "
+            const files = JSON.parse(require('fs').readFileSync('pack.json','utf8'))[0].files.map(f => f.path);
+            const required = [
+              'bin/agent-observer.js',
+              'src/cli.js',
+              '.claude-plugin/plugin.json',
+              'skills/agent-observer/SKILL.md',
+              'commands/subagent-report.md',
+            ];
+            const missing = required.filter(f => !files.includes(f));
+            if (missing.length) { console.error('Missing from the package: ' + missing.join(', ')); process.exit(1); }
+            console.log('Package contains all ' + required.length + ' required files.');
+          "
+
+  claude-plugin-validate:
+    name: claude plugin validate
+    runs-on: ubuntu-latest
+    # Informational: the CLI is not guaranteed installable on a runner, so a
+    # failure here must not block a pull request. npm run validate-plugin is the
+    # gate that does block.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate the plugin
+        run: claude plugin validate .

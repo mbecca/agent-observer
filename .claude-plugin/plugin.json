@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "agent-observer",
+  "displayName": "Agent Observer",
+  "version": "0.1.0",
+  "description": "See which subagents ran in a session, with which model and for which task, read straight from Claude Code's own metadata.",
+  "author": {
+    "name": "Matias Beccaria",
+    "url": "https://github.com/beccariamatias"
+  },
+  "homepage": "https://github.com/beccariamatias/agent-observer#readme",
+  "repository": "https://github.com/beccariamatias/agent-observer",
+  "license": "MIT",
+  "keywords": [
+    "subagents",
+    "observability",
+    "model-routing",
+    "claude-code",
+    "reporting"
+  ],
+  "skills": "./skills/",
+  "commands": [
+    "./commands/"
+  ],
+  "defaultEnabled": true
+}

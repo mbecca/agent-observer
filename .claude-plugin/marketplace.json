@@ -1,0 +1,38 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "agent-observer-marketplace",
+  "owner": {
+    "name": "Matias Beccaria",
+    "url": "https://github.com/beccariamatias"
+  },
+  "description": "Observability tooling for coding agents.",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "agent-observer",
+      "displayName": "Agent Observer",
+      "description": "See which subagents ran in a session, with which model and for which task, read straight from Claude Code's own metadata.",
+      "source": "./",
+      "version": "0.1.0",
+      "author": {
+        "name": "Matias Beccaria",
+        "url": "https://github.com/beccariamatias"
+      },
+      "homepage": "https://github.com/beccariamatias/agent-observer#readme",
+      "repository": "https://github.com/beccariamatias/agent-observer",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "subagents",
+        "observability",
+        "model-routing",
+        "claude-code"
+      ],
+      "tags": [
+        "observability",
+        "reporting"
+      ],
+      "defaultEnabled": true
+    }
+  ]
+}

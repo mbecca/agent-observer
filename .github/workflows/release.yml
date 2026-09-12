@@ -1,0 +1,146 @@
+name: Release
+
+# Tag a release to publish it:
+#
+#   npm version minor           # bumps package.json and tags vX.Y.Z
+#   node scripts/sync-version.mjs   # propagates to the other manifests
+#   git commit -am "Release vX.Y.Z" && git push --follow-tags
+#
+# The tag is the trigger. Everything below refuses to publish unless the tag,
+# package.json, plugin.json, marketplace.json, src/version.js and the changelog
+# all agree.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and verify without publishing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Lint, versions, manifests and tests
+        run: npm run verify
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+  publish-npm:
+    name: publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Re-check the tag against every manifest
+        run: npm run check-version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+      - name: Publish
+        # Skipped with a clear message rather than failing the run when the
+        # token is not configured yet, so the GitHub release still happens.
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NPM_TOKEN is not set; skipping the npm publish."
+            echo "Add a repository secret named NPM_TOKEN to enable it."
+            exit 0
+          fi
+          npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github-release:
+    name: github release
+    needs: verify
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build the tarball
+        run: npm pack
+
+      - name: Extract this version's changelog section
+        id: notes
+        run: node scripts/changelog-section.mjs "${GITHUB_REF_NAME#v}" > RELEASE_NOTES.md
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: '*.tgz'
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  marketplace:
+    name: refresh the marketplace
+    needs: [verify, github-release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Claude Code resolves `/plugin marketplace add <owner>/<repo>` against the
+      # default branch, so the marketplace manifest on main is what users get.
+      # This step keeps that pointer at the tag that was just released.
+      - name: Point the marketplace at the released tag
+        run: node scripts/sync-version.mjs "${GITHUB_REF_NAME#v}" --marketplace-ref "${GITHUB_REF_NAME}"
+
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet; then
+            echo "Marketplace manifest is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git commit -m "Point the marketplace at ${GITHUB_REF_NAME}"
+          git push origin main

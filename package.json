@@ -1,0 +1,56 @@
+{
+  "name": "agent-observer",
+  "version": "0.1.0",
+  "description": "See which subagents your coding agent ran, with which model, for which task. Works with Claude Code out of the box.",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "subagents",
+    "agent",
+    "observability",
+    "llm",
+    "model-routing",
+    "cli"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.19.0"
+  },
+  "bin": {
+    "agent-observer": "bin/agent-observer.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./core/model": "./src/core/model.js",
+    "./core/report": "./src/core/report.js",
+    "./adapters": "./src/adapters/index.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "skills/",
+    "commands/",
+    ".claude-plugin/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node scripts/run-tests.mjs",
+    "check-version": "node scripts/check-version.mjs",
+    "validate-plugin": "node scripts/validate-plugin.mjs",
+    "lint": "node scripts/check-syntax.mjs",
+    "verify": "npm run lint && npm run check-version && npm run validate-plugin && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beccariamatias/agent-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/beccariamatias/agent-observer/issues"
+  },
+  "homepage": "https://github.com/beccariamatias/agent-observer#readme"
+}

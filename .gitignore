@@ -1,0 +1,15 @@
+node_modules/
+*.tgz
+pack.json
+RELEASE_NOTES.md
+
+# Local scratch
+tmp/
+*.local.*
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
