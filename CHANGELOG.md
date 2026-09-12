@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-12
+
+### Fixed
+
+- `current` no longer reports a different session's subagents as though they
+  were this session's. When the environment names a session that recorded no
+  subagents, that session is now reported empty, because "this session used
+  none" is the true answer. A fallback to the most recent session now happens
+  only when the named session is unknown, and says so on stdout.
+- A session requested by name is no longer hidden by the rule that omits empty
+  sessions from listings.
+- Project paths recorded on another operating system are shortened correctly.
+  `path.basename` only recognises the separator of the platform it runs on, so
+  on Linux and macOS a Windows path was left whole in the project column. This
+  affected the Claude Code and Codex adapters.
+
 ## [0.1.0] - 2026-09-11
 
 First release.
@@ -30,5 +46,6 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/mbecca/agent-observer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mbecca/agent-observer/releases/tag/v0.1.0
