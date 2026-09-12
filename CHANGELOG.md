@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.2.0] - 2026-09-12
 
+### Fixed
+
+- The documented release command could not release anything. It said `git tag`
+  followed by `git push --follow-tags`, but `--follow-tags` pushes annotated
+  tags and silently skips lightweight ones, so the tag stayed on the machine
+  and the release workflow never fired while the push reported success. Every
+  copy of the instructions now uses `git tag -a`.
+
 ### Added
 
 - CLAUDE.md and AGENTS.md stating how this repository is developed: the two

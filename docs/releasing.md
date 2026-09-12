@@ -53,9 +53,14 @@ user would notice, including a change to `SKILL.md`.
 
    ```bash
    git commit -am "Release v0.2.0"
-   git tag v0.2.0
+   git tag -a v0.2.0 -m "Release v0.2.0"
    git push --follow-tags
    ```
+
+   **`-a` is not optional.** `git push --follow-tags` pushes annotated tags and
+   silently ignores lightweight ones, so `git tag v0.2.0` without it leaves the
+   tag on your machine, the release workflow never fires, and the push reports
+   success. Check with `git ls-remote --tags origin` if no release run appears.
 
 ## What happens then
 

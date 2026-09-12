@@ -103,7 +103,7 @@ node scripts/sync-version.mjs 0.2.0
 # move the Unreleased changelog entries under a 0.2.0 heading
 npm run verify
 git commit -am "Release v0.2.0"
-git tag v0.2.0
+git tag -a v0.2.0 -m "Release v0.2.0"   # -a matters: --follow-tags skips lightweight tags
 git push --follow-tags
 ```
 
