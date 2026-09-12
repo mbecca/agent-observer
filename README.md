@@ -16,6 +16,10 @@ not the scope. The core knows nothing about either, and any agent can be read
 the same way, through its own adapter or through the
 [common event format](docs/event-format.md).
 
+```bash
+agent-observer tree 3a372c2d
+```
+
 ```
 Session 3a372c2d-5be3-43b6-a7d5-29cc9e032cd7
   project  C:\Users\dev\work\my-repo
@@ -93,10 +97,10 @@ npm update -g agent-observer
 ## Use
 
 ```bash
-agent-observer current          # the session you are in, or the most recent one
-agent-observer tree             # how that session was orchestrated
+agent-observer current          # the session you are in, as a table
+agent-observer tree             # the same subagents, drawn as a tree of tasks
+agent-observer session <id>     # another session, by id or unambiguous prefix
 agent-observer sessions         # every session that dispatched subagents
-agent-observer session <id>     # one session, by id or unambiguous prefix
 agent-observer models           # model usage across sessions
 agent-observer timeline         # a flat, time-ordered stream
 agent-observer watch            # new dispatches as they happen
@@ -105,7 +109,13 @@ agent-observer adapters         # what each adapter can observe here
 agent-observer doctor           # why you are seeing nothing
 ```
 
-A session report:
+The first three are the same report with different defaults. **The command
+chooses the session, `--format` chooses how it is drawn**, so `current --format
+tree` and `tree` print the same thing. `tree` and `session` take a session id;
+`current` never does, because it is always the session you are in.
+
+`agent-observer session 3a372c2d`, which is also what `current` prints for the
+session you are in:
 
 ```
 Session 3a372c2d-5be3-43b6-a7d5-29cc9e032cd7
