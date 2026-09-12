@@ -6,15 +6,14 @@ See which subagents your coding agent ran, with which model, for which task.
 
 Orchestrators route work across models: a cheap one to implement, a stronger one
 to review, the strongest for a final pass. Whether that actually happened is a
-separate question from whether it was planned, and the answer is already on
-disk, because agents record what they dispatched. This reads those records.
+separate question from whether it was planned.
 
-Claude Code is the first agent supported, since it writes a metadata file for
-every subagent naming the model that really ran it, and
-[Superpowers](https://github.com/obra/superpowers) is one orchestrator that
-produces the pattern above. Both are examples rather than the scope. The core
-knows nothing about either, and any agent that records its dispatches can be
-read the same way, through its own adapter or through the
+Agents and harnesses run these workflows by dispatching subagents, each with its
+own task and often its own model. Where an agent records what it dispatched,
+this reads that record. [Claude Code](https://code.claude.com) and
+[Superpowers](https://github.com/obra/superpowers) are the examples used above,
+not the scope. The core knows nothing about either, and any agent can be read
+the same way, through its own adapter or through the
 [common event format](docs/event-format.md).
 
 ```
