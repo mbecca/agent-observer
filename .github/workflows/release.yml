@@ -111,36 +111,36 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
 
   marketplace:
-    name: refresh the marketplace
+    name: check the marketplace serves this release
     needs: [verify, github-release]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
     steps:
+      # Claude Code resolves `/plugin marketplace add <owner>/<repo>` against the
+      # default branch, and this repository is its own marketplace, so what main
+      # says is what users install. Tagging a release without merging the version
+      # bump to main would publish one version and serve another.
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # Claude Code resolves `/plugin marketplace add <owner>/<repo>` against the
-      # default branch, so the marketplace manifest on main is what users get.
-      # This step keeps that pointer at the tag that was just released.
-      - name: Point the marketplace at the released tag
-        run: node scripts/sync-version.mjs "${GITHUB_REF_NAME#v}" --marketplace-ref "${GITHUB_REF_NAME}"
-
-      - name: Commit if anything changed
+      - name: main must declare the version that was just tagged
         run: |
-          if git diff --quiet; then
-            echo "Marketplace manifest is already current."
-            exit 0
+          RELEASED="${GITHUB_REF_NAME#v}"
+          ON_MAIN=$(node -p "require('./.claude-plugin/marketplace.json').plugins.find(p => p.name === 'agent-observer').version")
+          echo "tag:  $RELEASED"
+          echo "main: $ON_MAIN"
+          if [ "$RELEASED" != "$ON_MAIN" ]; then
+            echo ""
+            echo "main still serves $ON_MAIN, so '/plugin install agent-observer' will"
+            echo "not give people $RELEASED. Merge the release commit to main."
+            exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json
-          git commit -m "Point the marketplace at ${GITHUB_REF_NAME}"
-          git push origin main
+          echo "The marketplace on main serves the released version."
+
+      - name: Everything on main is consistent
+        run: npm run check-version
