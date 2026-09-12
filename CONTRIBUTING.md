@@ -6,10 +6,16 @@ getting started is short:
 ```bash
 git clone https://github.com/mbecca/agent-observer.git
 cd agent-observer
-npm run verify
+corepack enable          # installs the pinned pnpm, if you do not have it
+pnpm install             # resolves to nothing; proves the lockfile is in sync
+pnpm run verify
 ```
 
-`npm run verify` parses every file, checks the version declarations agree,
+The pnpm version is pinned in `packageManager`, so corepack gives you the same
+one CI uses. There is still nothing to download: the install exists to validate
+the lockfile, not to fetch packages.
+
+`pnpm run verify` parses every file, checks the version declarations agree,
 validates the plugin manifests and runs the tests. CI runs the same thing on
 Windows, Linux and macOS across Node 18, 20, 22 and 24.
 
@@ -89,7 +95,7 @@ pipe it into other tools.
 ## Commits and pull requests
 
 One logical change per pull request. Describe what changed and why; if it fixes
-something, say what was wrong. Run `npm run verify` before pushing.
+something, say what was wrong. Run `pnpm run verify` before pushing.
 
 ## Releasing
 
@@ -101,7 +107,7 @@ The short version, tag-driven:
 ```bash
 node scripts/sync-version.mjs 0.2.0
 # move the Unreleased changelog entries under a 0.2.0 heading
-npm run verify
+pnpm run verify
 git commit -am "Release v0.2.0"
 git tag -a v0.2.0 -m "Release v0.2.0"   # -a matters: --follow-tags skips lightweight tags
 git push --follow-tags

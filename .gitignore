@@ -3,6 +3,11 @@ node_modules/
 pack.json
 RELEASE_NOTES.md
 
+# pnpm-lock.yaml is committed on purpose. There are no dependencies to lock, but
+# the lockfile pins the format and settings, and CI installs with
+# --frozen-lockfile so a stray one would be caught rather than silently used.
+.pnpm-store/
+
 # Claude Code: .claude/settings.json is committed, because it declares the
 # Superpowers plugin this project is developed with. Anything .local. is
 # personal to one machine and stays out.

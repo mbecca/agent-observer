@@ -55,10 +55,11 @@ No runtime dependencies. Node 18.19 or newer, on Windows, Linux or macOS.
 /plugin install agent-observer@agent-observer-marketplace
 ```
 
-**As a command line tool:**
+**As a command line tool**, from the npm registry with whichever client you use:
 
 ```bash
 npm install -g agent-observer
+pnpm add -g agent-observer
 ```
 
 **From source:**
@@ -88,10 +89,11 @@ what is actually loaded rather than what was published:
 node "${CLAUDE_PLUGIN_ROOT}/bin/agent-observer.js" --version
 ```
 
-Installed with npm instead:
+Installed from the registry instead:
 
 ```bash
 npm update -g agent-observer
+pnpm update -g agent-observer
 ```
 
 ## Use
@@ -253,13 +255,17 @@ console.log(sessions[0].modelCounts()); // { sonnet: 6, haiku: 3, opus: 1 }
 
 ## Development
 
+The project uses [pnpm](https://pnpm.io), pinned through `packageManager` so
+everyone runs the same version. `corepack enable` is enough to get it.
+
 ```bash
-npm test              # Node's built-in test runner
-npm run lint          # parse every file
-npm run validate-plugin
-npm run check-version
-npm run check-docs
-npm run verify        # all of the above
+pnpm install             # resolves to nothing; proves the lockfile is in sync
+pnpm run test            # Node's built-in test runner
+pnpm run lint            # parse every file
+pnpm run validate-plugin
+pnpm run check-version
+pnpm run check-docs
+pnpm run verify          # all of the above
 ```
 
 No dependencies, runtime or development. Tests run against fixture directories
@@ -281,7 +287,7 @@ changelog all agree:
 ```bash
 node scripts/sync-version.mjs 0.2.0
 # move the Unreleased changelog entries under a 0.2.0 heading
-npm run verify
+pnpm run verify
 git commit -am "Release v0.2.0"
 git tag -a v0.2.0 -m "Release v0.2.0"   # -a matters: --follow-tags skips lightweight tags
 git push --follow-tags

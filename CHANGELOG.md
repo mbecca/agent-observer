@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Development moved to pnpm, pinned through `packageManager` so contributors and
+  CI run the same version. `corepack enable` is the whole setup. CI installs
+  with `--frozen-lockfile`, which is what the committed lockfile is for, since
+  there are no dependencies to lock.
+- This changes nothing about the published package or the plugin. The tool still
+  has no dependencies and still needs nothing at run time beyond Node, and it
+  still publishes to the npm registry, so it installs with whichever client you
+  already use.
+
 ## [0.2.1] - 2026-09-12
 
 ### Fixed

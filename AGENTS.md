@@ -25,7 +25,7 @@ Claude-specific, and it is what this repository expects either way:
    whole-branch pass and for anything that changes the common event format.
 6. **Debug systematically.** Find the cause before proposing a fix. A test that
    fails on one platform is a bug, not a flake.
-7. **Verify before claiming.** Run `npm run verify`, read the output, and only
+7. **Verify before claiming.** Run `pnpm run verify`, read the output, and only
    then say it works.
 8. **Review before merging.** Get the change reviewed against the plan and
    against these rules.

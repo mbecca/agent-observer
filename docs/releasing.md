@@ -46,7 +46,7 @@ user would notice, including a change to `SKILL.md`.
 4. **Verify.**
 
    ```bash
-   npm run verify
+   pnpm run verify
    ```
 
 5. **Commit and tag.** The tag is the trigger, and it must match:
@@ -102,13 +102,16 @@ Or look at the path: the version is a directory component in
 `~/.claude/plugins/cache/agent-observer-marketplace/agent-observer/`. More than
 one directory there means older versions are still cached, which is normal.
 
-## npm users
+## Registry users
 
 ```bash
 npm update -g agent-observer
+pnpm update -g agent-observer
 ```
 
-This needs a published tag. Pushing to `main` does nothing for npm users.
+This needs a published tag. Pushing to `main` does nothing for them. The
+project is developed with pnpm, but it publishes to the npm registry, so people
+install it with whichever client they already use.
 
 ## Choosing the number
 

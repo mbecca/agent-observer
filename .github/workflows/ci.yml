@@ -27,15 +27,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Reads the version pinned in package.json's packageManager field, so CI
+      # and a contributor's machine run the same pnpm.
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      # The project has no dependencies, so this resolves to almost nothing. It
+      # runs anyway to prove the lockfile is valid and in sync on every platform.
+      - name: Install
+        run: pnpm install --frozen-lockfile
 
       - name: Parse every file
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run tests
-        run: npm test
+        run: pnpm run test
 
       - name: Smoke test the CLI
         run: |
@@ -50,26 +60,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
 
       - name: Validate plugin and marketplace manifests
-        run: npm run validate-plugin
+        run: pnpm run validate-plugin
 
       - name: Check every version declaration agrees
-        run: npm run check-version
+        run: pnpm run check-version
 
       # CLAUDE.md and AGENTS.md are how a contributing agent learns the rules of
       # this repository. A broken link there silently drops a rule.
       - name: Check the contributor documentation is intact
-        run: npm run check-docs
+        run: pnpm run check-docs
 
       - name: Check the package publishes the files the plugin needs
         run: |
-          npm pack --dry-run --json > pack.json
+          pnpm pack --dry-run --json > pack.json
           node -e "
-            const files = JSON.parse(require('fs').readFileSync('pack.json','utf8'))[0].files.map(f => f.path);
+            const files = JSON.parse(require('fs').readFileSync('pack.json','utf8')).files.map(f => f.path);
             const required = [
               'bin/agent-observer.js',
               'src/cli.js',
@@ -86,18 +102,19 @@ jobs:
     name: claude plugin validate
     runs-on: ubuntu-latest
     # Informational: the CLI is not guaranteed installable on a runner, so a
-    # failure here must not block a pull request. npm run validate-plugin is the
-    # gate that does block.
+    # failure here must not block a pull request. pnpm run validate-plugin is
+    # the gate that does block.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-
+      # dlx rather than a global install: it needs no PNPM_HOME on the runner,
+      # and this is somebody else's CLI rather than a dependency of ours.
       - name: Validate the plugin
-        run: claude plugin validate .
+        run: pnpm dlx @anthropic-ai/claude-code plugin validate .

@@ -69,17 +69,21 @@ can do each job. For this codebase that means:
 
 ## Commands
 
+The project uses pnpm, pinned through `packageManager`. `corepack enable` gets
+it. Use `pnpm run`, not `npm run`.
+
 ```bash
-npm run verify          # everything below, in one go
-npm test                # Node's built-in runner, fixtures on disk
-npm run lint            # parse every file
-npm run validate-plugin # plugin and marketplace manifests
-npm run check-version   # every version declaration agrees
+pnpm run verify          # everything below, in one go
+pnpm run test            # Node's built-in runner, fixtures on disk
+pnpm run lint            # parse every file
+pnpm run validate-plugin # plugin and marketplace manifests
+pnpm run check-version   # every version declaration agrees
+pnpm run check-docs      # contributor documentation is intact
 ```
 
-There are no dependencies, runtime or development. Keep it that way. A pull
-request that adds one needs to justify it against the cost of losing a
-zero-install tool.
+There are no dependencies, runtime or development, and the published tool needs
+nothing at run time beyond Node. Keep it that way. A pull request that adds a
+dependency needs to justify it against the cost of losing that.
 
 ## Testing
 
@@ -98,7 +102,7 @@ full green CI run on Windows alone. Cross-platform bugs here are real.
 
 ## Before you say it works
 
-Run `npm run verify` and read the output. CI runs Windows, Linux and macOS
+Run `pnpm run verify` and read the output. CI runs Windows, Linux and macOS
 across Node 18, 20, 22 and 24, and this project has already had a change pass on
 one platform and fail on the other two.
 
@@ -134,7 +138,7 @@ nothing. Bump for anything a user would notice, `SKILL.md` included.
 ```bash
 node scripts/sync-version.mjs 0.2.0   # propagates to all five declarations
 # move the Unreleased changelog entries under a 0.2.0 heading
-npm run verify
+pnpm run verify
 git commit -am "Release v0.2.0"
 git tag -a v0.2.0 -m "Release v0.2.0"   # -a matters: --follow-tags skips lightweight tags
 git push --follow-tags

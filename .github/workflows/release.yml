@@ -2,9 +2,12 @@ name: Release
 
 # Tag a release to publish it:
 #
-#   npm version minor           # bumps package.json and tags vX.Y.Z
-#   node scripts/sync-version.mjs   # propagates to the other manifests
-#   git commit -am "Release vX.Y.Z" && git push --follow-tags
+#   node scripts/sync-version.mjs X.Y.Z   # propagates to all five manifests
+#   # move the Unreleased changelog entries under an X.Y.Z heading
+#   pnpm run verify
+#   git commit -am "Release vX.Y.Z"
+#   git tag -a vX.Y.Z -m "Release vX.Y.Z"   # -a: --follow-tags skips lightweight tags
+#   git push --follow-tags
 #
 # The tag is the trigger. Everything below refuses to publish unless the tag,
 # package.json, plugin.json, marketplace.json, src/version.js and the changelog
@@ -36,12 +39,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint, versions, manifests and tests
-        run: npm run verify
+        run: pnpm run verify
         env:
           RELEASE_TAG: ${{ github.ref_name }}
 
@@ -56,13 +65,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
 
       - name: Re-check the tag against every manifest
-        run: npm run check-version
+        run: pnpm run check-version
         env:
           RELEASE_TAG: ${{ github.ref_name }}
 
@@ -75,7 +87,7 @@ jobs:
             echo "Add a repository secret named NPM_TOKEN to enable it."
             exit 0
           fi
-          npm publish --access public --provenance
+          pnpm publish --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -91,12 +103,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
 
       - name: Build the tarball
-        run: npm pack
+        run: pnpm pack
 
       - name: Extract this version's changelog section
         id: notes
@@ -124,9 +139,12 @@ jobs:
         with:
           ref: main
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
 
       - name: main must declare the version that was just tagged
         run: |
@@ -143,4 +161,4 @@ jobs:
           echo "The marketplace on main serves the released version."
 
       - name: Everything on main is consistent
-        run: npm run check-version
+        run: pnpm run check-version

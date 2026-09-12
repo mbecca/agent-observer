@@ -14,7 +14,7 @@ Delete whichever does not apply.
 
 ## Checklist
 
-- [ ] `npm run verify` passes
+- [ ] `pnpm run verify` passes
 - [ ] Tests cover the change, including the failure cases
 - [ ] Anything agent-specific lives in an adapter, not in `src/core/`
 - [ ] No adapter infers data the agent does not actually record
