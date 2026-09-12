@@ -16,15 +16,18 @@ All notable changes to this project are documented here. The format follows
   documentation cannot rot into broken links or quietly lose a rule.
 - A pull request template that asks how the change was built, and for the
   subagent report when an agent built it.
+- The Superpowers plugin is declared in a committed .claude/settings.json, so
+  Claude Code offers to enable it when the project is opened and a contributor
+  installs nothing by hand.
 - A banner in the README contrasting the routing an orchestrator planned with
   the routing that was actually recorded. One SVG, legible on light and dark.
 
 ### Changed
 
-- The README no longer reads as though Claude Code and Superpowers are the
-  scope. They are the first supported agent and one example orchestrator; the
-  core knows nothing about either, and any agent that records its dispatches can
-  be read through its own adapter or the common event format.
+- The README opens on what agents and harnesses do, running workflows by
+  dispatching subagents, rather than on a product. Claude Code and Superpowers
+  are named only as examples. The core knows nothing about either, and any agent
+  can be read through its own adapter or the common event format.
 
 ## [0.1.1] - 2026-09-12
 

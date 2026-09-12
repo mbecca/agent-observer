@@ -19,11 +19,16 @@ This project is developed using the [Superpowers](https://github.com/obra/superp
 skills, and there is a reason beyond taste: agent-observer exists to report how
 orchestrators route models across subagents, so it should be built by one.
 
-If you are driving Claude Code, install them once:
+If you are driving Claude Code you do not have to install anything. The
+repository declares the plugin in `.claude/settings.json`, so Claude Code offers
+to enable it the first time you open the project. Accept, and the skills are
+there.
+
+To do it by hand, or to check what you have:
 
 ```
-/plugin marketplace add obra/superpowers
-/plugin install superpowers
+/plugin install superpowers@claude-plugins-official
+/plugin marketplace list
 ```
 
 [CLAUDE.md](CLAUDE.md) is loaded automatically and tells the agent which skill

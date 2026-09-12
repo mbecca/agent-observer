@@ -3,6 +3,11 @@ node_modules/
 pack.json
 RELEASE_NOTES.md
 
+# Claude Code: .claude/settings.json is committed, because it declares the
+# Superpowers plugin this project is developed with. Anything .local. is
+# personal to one machine and stays out.
+.claude/settings.local.json
+
 # Local scratch
 tmp/
 *.local.*

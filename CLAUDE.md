@@ -30,6 +30,11 @@ This repository is developed with the Superpowers skills. Use them rather than
 working ad hoc. They are what this tool was built to observe, so using them here
 is also how the project dogfoods itself.
 
+The plugin is declared in `.claude/settings.json`, which is committed, so Claude
+Code offers to enable it when the project is opened. Nothing needs installing by
+hand. If the skills are not available, say so rather than proceeding without
+them.
+
 Invoke them by name with the Skill tool. The mapping from situation to skill:
 
 | Situation | Skill |
