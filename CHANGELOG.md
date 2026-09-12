@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- CLAUDE.md and AGENTS.md stating how this repository is developed: the two
+  design rules, and the Superpowers skill to reach for at each point of the
+  work. Claude Code loads CLAUDE.md automatically, so the workflow applies to
+  any contributing agent without anyone having to remember it.
+- `npm run check-docs`, wired into `verify` and CI, so the contributor
+  documentation cannot rot into broken links or quietly lose a rule.
+- A pull request template that asks how the change was built, and for the
+  subagent report when an agent built it.
+
 ## [0.1.1] - 2026-09-12
 
 ### Fixed

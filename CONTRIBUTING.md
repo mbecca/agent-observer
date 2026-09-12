@@ -13,6 +13,39 @@ npm run verify
 validates the plugin manifests and runs the tests. CI runs the same thing on
 Windows, Linux and macOS across Node 18, 20, 22 and 24.
 
+## Working with a coding agent
+
+This project is developed using the [Superpowers](https://github.com/obra/superpowers)
+skills, and there is a reason beyond taste: agent-observer exists to report how
+orchestrators route models across subagents, so it should be built by one.
+
+If you are driving Claude Code, install them once:
+
+```
+/plugin marketplace add obra/superpowers
+/plugin install superpowers
+```
+
+[CLAUDE.md](CLAUDE.md) is loaded automatically and tells the agent which skill
+to use at which point: brainstorming before design, a written plan before code,
+test-driven development while writing it, systematic debugging when something
+breaks, and a review before the pull request.
+
+Using another agent, or none, is fine. [AGENTS.md](AGENTS.md) states the same
+workflow without the Claude-specific tooling. What the project asks for is the
+discipline, not the plugin.
+
+### Show your work
+
+If subagents did the work, include their report in the pull request:
+
+```bash
+node bin/agent-observer.js session <session-id> --format markdown --no-color
+```
+
+It tells a reviewer how the change was produced, and it is the most honest test
+this project has of whether its own output is worth reading.
+
 ## The design rule
 
 The core knows nothing about any particular agent. Anything Claude-specific,

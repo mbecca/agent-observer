@@ -36,14 +36,17 @@
     "docs/",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "CLAUDE.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "test": "node scripts/run-tests.mjs",
     "check-version": "node scripts/check-version.mjs",
     "validate-plugin": "node scripts/validate-plugin.mjs",
     "lint": "node scripts/check-syntax.mjs",
-    "verify": "npm run lint && npm run check-version && npm run validate-plugin && npm test"
+    "verify": "npm run lint && npm run check-version && npm run check-docs && npm run validate-plugin && npm test",
+    "check-docs": "node scripts/check-docs.mjs"
   },
   "repository": {
     "type": "git",

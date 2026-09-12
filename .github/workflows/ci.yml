@@ -60,6 +60,11 @@ jobs:
       - name: Check every version declaration agrees
         run: npm run check-version
 
+      # CLAUDE.md and AGENTS.md are how a contributing agent learns the rules of
+      # this repository. A broken link there silently drops a rule.
+      - name: Check the contributor documentation is intact
+        run: npm run check-docs
+
       - name: Check the package publishes the files the plugin needs
         run: |
           npm pack --dry-run --json > pack.json
