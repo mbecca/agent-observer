@@ -413,6 +413,8 @@ export function toCsv(sessions) {
   return rows.join('\n');
 }
 
+export { toHtml } from './html.js';
+
 /** Markdown report, for pasting into a pull request or an issue. */
 export function toMarkdown(sessions) {
   const out = [];

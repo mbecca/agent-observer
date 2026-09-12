@@ -42,7 +42,7 @@ Linux and macOS; no shell-specific syntax is needed.
 
 Useful flags: `--since 7d`, `--project <text>`, `--model <text>`,
 `--role implement|review|fix|test|plan|explore|document`, `--limit <n>`,
-`--format table|tree|timeline|json|ndjson|csv|markdown`.
+`--format table|tree|timeline|json|ndjson|csv|markdown|html`.
 
 Add `--no-color` whenever you intend to quote the output back to the user, so no
 escape codes leak into your reply.

@@ -14,7 +14,7 @@ export const EXIT_ERROR = 1;
 export const EXIT_NO_DATA = 2;
 
 const TEXT_FORMATS = ['table', 'tree', 'timeline', 'summary'];
-const DATA_FORMATS = ['json', 'ndjson', 'csv', 'markdown'];
+const DATA_FORMATS = ['json', 'ndjson', 'csv', 'markdown', 'html'];
 const ALL_FORMATS = [...TEXT_FORMATS, ...DATA_FORMATS];
 
 const COMMANDS = [
@@ -328,6 +328,8 @@ export function renderData(sessions, format) {
       return report.toCsv(sessions);
     case 'markdown':
       return report.toMarkdown(sessions);
+    case 'html':
+      return report.toHtml(sessions);
     default:
       throw new Error(`Unknown data format: ${format}`);
   }

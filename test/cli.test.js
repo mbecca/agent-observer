@@ -359,4 +359,17 @@ describe('cli end to end', () => {
       removeDir(empty);
     }
   });
+
+  it('writes an HTML report for a session', async () => {
+    const { code, stdout } = await runCli(['session', 'aaaaaaaa', '--format', 'html']);
+    assert.equal(code, EXIT_OK);
+    assert.match(stdout, /^<!doctype html>/i);
+    assert.match(stdout, /Implement Task 1/);
+    assert.doesNotMatch(stdout, /<script/i);
+  });
+
+  it('offers html in the format list', async () => {
+    const { stdout } = await runCli([]);
+    assert.match(stdout, /html/);
+  });
 });
