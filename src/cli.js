@@ -370,6 +370,16 @@ function renderOneSession(session, args, write) {
 }
 
 function cmdCurrent(args, io) {
+  // `current` is by definition the session you are in, so an id cannot apply.
+  // Say so: swallowing the argument looks like it was honoured.
+  const ignoredId = args.positional[0];
+  if (ignoredId) {
+    io.warn(
+      `current takes no session id; '${ignoredId}' ignored. ` +
+        `Use 'agent-observer session ${ignoredId}' to report that session.`,
+    );
+  }
+
   const found = findCurrent(args);
   if (!found) return noData(args, io.write);
 

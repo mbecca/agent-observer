@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-12
+
+### Fixed
+
+- `current` swallowed a session id without a word, so `current 3a372c2d` looked
+  like it had reported that session while actually reporting the one you are in.
+  It now says the id was ignored and points at `session <id>`, on stderr so
+  piped output is unaffected. `current` still never takes an id, because it is
+  by definition the session you are in.
+
 ## [0.2.0] - 2026-09-12
 
 ### Fixed
@@ -92,7 +102,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/mbecca/agent-observer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mbecca/agent-observer/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mbecca/agent-observer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mbecca/agent-observer/releases/tag/v0.1.0

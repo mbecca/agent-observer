@@ -261,6 +261,21 @@ describe('cli end to end', () => {
     assert.match(capture.stdout, /Showing the most recent session that does/);
   });
 
+  it('says a session id is ignored rather than dropping it silently', async () => {
+    // `current` is always the session you are in, so an id cannot apply. It
+    // used to swallow one without a word, which looks like it worked.
+    const { code, stdout, stderr } = await runCli([
+      'current',
+      'aaaaaaaa-1111-2222-3333-444444444444',
+    ]);
+    assert.equal(code, EXIT_OK);
+    assert.match(stderr, /takes no session id/);
+    assert.match(stderr, /aaaaaaaa-1111-2222-3333-444444444444/);
+    assert.match(stderr, /agent-observer session/);
+    // Still reports, rather than refusing over an argument it can ignore.
+    assert.match(stdout, /Implement Task 1/);
+  });
+
   it('renders a tree', async () => {
     const { code, stdout } = await runCli(['tree']);
     assert.equal(code, EXIT_OK);
