@@ -116,5 +116,8 @@ jobs:
 
       # dlx rather than a global install: it needs no PNPM_HOME on the runner,
       # and this is somebody else's CLI rather than a dependency of ours.
+      #
+      # --strict matches what the community-marketplace review pipeline runs, so
+      # a red mark here means a submission would be rejected.
       - name: Validate the plugin
-        run: pnpm dlx @anthropic-ai/claude-code plugin validate .
+        run: pnpm dlx @anthropic-ai/claude-code plugin validate . --strict

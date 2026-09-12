@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The CI plugin validation now runs with --strict, matching the check the
+  community-marketplace review pipeline runs, so a submission-blocking problem
+  shows up on a pull request rather than at submission time.
 - Development moved to pnpm, pinned through `packageManager` so contributors and
   CI run the same version. `corepack enable` is the whole setup. CI installs
   with `--frozen-lockfile`, which is what the committed lockfile is for, since
