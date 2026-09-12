@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-12
+
 ### Added
 
 - CLAUDE.md and AGENTS.md stating how this repository is developed: the two
@@ -26,6 +28,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `/agent-observer:subagent-report` now takes the same arguments as the command
+  line tool. It had its own parallel vocabulary, where the tree was `--tree`
+  rather than `tree`, which meant two spellings for one idea and no explanation
+  of why. Every command is reachable through it now, including `watch`,
+  `adapters`, `doctor` and the CSV and Markdown output formats, none of which it
+  could previously reach. The older flag spellings still work.
 - The README documented the slash command as `/subagent-report`. Plugin commands
   are namespaced, so the reliable form is `/agent-observer:subagent-report`; the
   bare name resolves only while nothing else has claimed it. `check-docs` now
@@ -76,6 +84,7 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mbecca/agent-observer/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mbecca/agent-observer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mbecca/agent-observer/releases/tag/v0.1.0

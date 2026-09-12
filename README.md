@@ -164,13 +164,18 @@ memory, which is the point. There is also a slash command:
 
 ```
 /agent-observer:subagent-report
-/agent-observer:subagent-report --tree
-/agent-observer:subagent-report --models --since 7d
+/agent-observer:subagent-report tree
+/agent-observer:subagent-report models --since 7d
+/agent-observer:subagent-report session 3a372c2d
 ```
 
+Both take the same arguments as the command line tool above, so there is one
+vocabulary to learn rather than three. The older flag spellings, `--tree`,
+`--models`, `--all`, `--timeline`, `--json`, still work.
+
 Plugin commands are namespaced, and the bare `/subagent-report` works too as
-long as nothing else has claimed that name. The skill itself is
-`/agent-observer:agent-observer`, and takes the same arguments as the CLI.
+long as nothing else has claimed that name. The skill is
+`/agent-observer:agent-observer`.
 
 ## How the Claude Code adapter works
 
