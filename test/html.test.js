@@ -83,3 +83,82 @@ describe('toHtml empty sessions', () => {
     assert.match(html, /No subagents recorded/i);
   });
 });
+
+describe('toHtml escaping', () => {
+  it('escapes a task description that looks like markup', () => {
+    const nasty = toHtml([session([run('<script>alert(1)</script>', 'haiku', 0, 10)])], { now: NOW });
+    assert.doesNotMatch(nasty, /<script/i);
+    assert.match(nasty, /&lt;script&gt;/);
+  });
+});
+
+describe('toHtml timeline', () => {
+  // Two runs: one 60s at the start, one 180s starting 4 minutes in.
+  // Span is from 0s to 420s, so widths are 60/420 and 180/420.
+  const html = toHtml(
+    [session([run('Implement Task 1', 'haiku', 0, 60), run('Review Task 1', 'sonnet', 4, 180)])],
+    { now: NOW },
+  );
+
+  function bars(markup) {
+    return [...markup.matchAll(/class="bar[^"]*"[^>]*style="left:([\d.]+)%;width:([\d.]+)%/g)]
+      .map((m) => ({ left: Number(m[1]), width: Number(m[2]) }));
+  }
+
+  it('draws one bar per subagent', () => {
+    assert.equal(bars(html).length, 2);
+  });
+
+  it('sizes each bar in proportion to its duration', () => {
+    const [first, second] = bars(html);
+    // 180s is three times 60s, so the second bar is three times as wide.
+    assert.ok(Math.abs(second.width / first.width - 3) < 0.05);
+  });
+
+  it('positions each bar by its start time', () => {
+    const [first, second] = bars(html);
+    assert.equal(first.left, 0);
+    // Starts 240s into a 420s span.
+    assert.ok(Math.abs(second.left - (240 / 420) * 100) < 0.5);
+  });
+
+  it('names the model in text, not only in colour', () => {
+    assert.match(html, /class="chip"[^>]*>haiku</);
+    assert.match(html, /class="chip"[^>]*>sonnet</);
+  });
+
+  it('shows the task description', () => {
+    assert.match(html, /Implement Task 1/);
+    assert.match(html, /Review Task 1/);
+  });
+});
+
+describe('toHtml timeline edge cases', () => {
+  it('draws a running subagent up to now, marked as running', () => {
+    const html = toHtml(
+      [session([run('Implement Task 1', 'haiku', 0, 60), run('Fix findings', 'sonnet', 4, null)])],
+      { now: NOW },
+    );
+    assert.match(html, /class="bar running"/);
+    assert.match(html, /running/i);
+  });
+
+  it('renders an unrecorded model as unknown rather than as a colour', () => {
+    const html = toHtml([session([run('Explore', null, 0, 60)])], { now: NOW });
+    assert.match(html, /class="chip"[^>]*>unknown</);
+  });
+
+  it('keeps inherit as the recorded value it is', () => {
+    const html = toHtml([session([run('Explore', 'inherit', 0, 60)])], { now: NOW });
+    assert.match(html, /class="chip"[^>]*>inherit</);
+  });
+
+  it('falls back to a list when no duration is known at all', () => {
+    const html = toHtml(
+      [session([run('A', 'haiku', 0, null), run('B', 'sonnet', 2, null)])],
+      { now: NOW },
+    );
+    assert.doesNotMatch(html, /class="track"/);
+    assert.match(html, /class="fallback"/);
+  });
+});
