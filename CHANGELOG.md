@@ -19,8 +19,7 @@ All notable changes to this project are documented here. The format follows
 - The Superpowers plugin is declared in a committed .claude/settings.json, so
   Claude Code offers to enable it when the project is opened and a contributor
   installs nothing by hand.
-- A banner in the README contrasting the routing an orchestrator planned with
-  the routing that was actually recorded. One SVG, legible on light and dark.
+- A banner in the README, at `docs/banner.png`.
 
 ### Changed
 

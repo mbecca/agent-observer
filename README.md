@@ -1,6 +1,6 @@
 # agent-observer
 
-![Two panels. The first, dashed, shows an intended routing plan: cheap to implement, stronger to review, strongest for the last pass. The second shows what was actually recorded for each subagent, where one implementation ran on a standard model rather than a cheap one.](docs/banner.svg)
+![Agent Observer. See every agent, every model, every task. A dark dashboard showing agents on the left, the models they ran on in the middle, and on the right a real session report: ten subagents with the model, type, duration and task of each, and a tally of six sonnet, three haiku and one opus.](docs/banner.png)
 
 See which subagents your coding agent ran, with which model, for which task.
 
