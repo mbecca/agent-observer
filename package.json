@@ -47,10 +47,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/beccariamatias/agent-observer.git"
+    "url": "git+https://github.com/mbecca/agent-observer.git"
   },
   "bugs": {
-    "url": "https://github.com/beccariamatias/agent-observer/issues"
+    "url": "https://github.com/mbecca/agent-observer/issues"
   },
-  "homepage": "https://github.com/beccariamatias/agent-observer#readme"
+  "homepage": "https://github.com/mbecca/agent-observer#readme"
 }

@@ -39,7 +39,7 @@ No runtime dependencies. Node 18.19 or newer, on Windows, Linux or macOS.
 **As a Claude Code plugin**, which also installs a skill and a slash command:
 
 ```
-/plugin marketplace add beccariamatias/agent-observer
+/plugin marketplace add mbecca/agent-observer
 /plugin install agent-observer@agent-observer-marketplace
 ```
 
@@ -52,7 +52,7 @@ npm install -g agent-observer
 **From source:**
 
 ```bash
-git clone https://github.com/beccariamatias/agent-observer.git
+git clone https://github.com/mbecca/agent-observer.git
 cd agent-observer
 node bin/agent-observer.js current
 ```
@@ -199,7 +199,7 @@ console.log(sessions[0].modelCounts()); // { sonnet: 6, haiku: 3, opus: 1 }
 ## Development
 
 ```bash
-npm test              # 126 tests, Node's built-in runner
+npm test              # Node's built-in test runner
 npm run lint          # parse every file
 npm run validate-plugin
 npm run check-version

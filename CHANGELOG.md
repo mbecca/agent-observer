@@ -30,5 +30,5 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/beccariamatias/agent-observer/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/beccariamatias/agent-observer/releases/tag/v0.1.0
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mbecca/agent-observer/releases/tag/v0.1.0

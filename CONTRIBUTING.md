@@ -4,7 +4,7 @@ Thanks for looking. This project has no dependencies, runtime or development, so
 getting started is short:
 
 ```bash
-git clone https://github.com/beccariamatias/agent-observer.git
+git clone https://github.com/mbecca/agent-observer.git
 cd agent-observer
 npm run verify
 ```
