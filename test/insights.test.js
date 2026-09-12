@@ -130,12 +130,30 @@ describe('theException', () => {
     });
     assert.equal(theException(uniform), null);
   });
+
+  it('stays silent when more than one run broke the pattern', () => {
+    // Seven implementation runs: five on haiku, one on sonnet, one on opus.
+    // Haiku dominates at 5/7 (>2/3), but others.length is 2, not 1.
+    const session = new Session({
+      sessionId: 's1',
+      agents: [
+        run('Implement 1', 'haiku', 0, 60),
+        run('Implement 2', 'haiku', 2, 60),
+        run('Implement 3', 'haiku', 4, 60),
+        run('Implement 4', 'haiku', 6, 60),
+        run('Implement 5', 'haiku', 8, 60),
+        run('Implement 6', 'sonnet', 10, 60),
+        run('Implement 7', 'opus', 12, 60),
+      ],
+    });
+    assert.equal(theException(session), null);
+  });
 });
 
 describe('outsideSubagents', () => {
   it('reports the share of elapsed time with no subagent running', () => {
     const text = outsideSubagents(sddSession());
-    assert.match(text, /\d+% of elapsed time fell outside any subagent/);
+    assert.match(text, /^16% of elapsed time fell outside any subagent\.$/);
   });
 
   it('stays silent when subagent time exceeds elapsed time', () => {
@@ -151,8 +169,11 @@ describe('outsideSubagents', () => {
 describe('insightsFor', () => {
   it('returns the qualifying sentences in a fixed order', () => {
     const lines = insightsFor(sddSession());
-    assert.ok(lines.length >= 3);
-    assert.match(lines[0], /[Ii]mplementation ran on haiku/);
+    assert.equal(lines.length, 4);
+    assert.match(lines[0], /^Implementation ran on haiku in 3 of 4 tasks\.$/);
+    assert.match(lines[1], /Final whole-branch review/);
+    assert.match(lines[2], /^One implementation ran on sonnet where the other three ran on haiku\.$/);
+    assert.match(lines[3], /^16% of elapsed time fell outside any subagent\.$/);
   });
 
   it('returns nothing for a session that crosses no threshold', () => {
