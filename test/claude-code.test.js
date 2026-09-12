@@ -163,6 +163,46 @@ describe('ClaudeCodeAdapter', () => {
     });
   });
 
+  it('returns the named session empty rather than substituting another one', () => {
+    // A session that dispatched nothing is the correct answer to "what did this
+    // session use". Showing a different session's subagents would be a lie.
+    const bare = makeTempDir();
+    try {
+      writeClaudeFixture(bare, {
+        '11111111-1111-1111-1111-111111111111': {
+          project: 'C--work-busy',
+          cwd: '/work/busy',
+          agents: [{ id: 'agent-x', model: 'opus', description: 'Review everything' }],
+        },
+      });
+      // A second session with a transcript but no subagents directory.
+      const quiet = '22222222-2222-2222-2222-222222222222';
+      fs.writeFileSync(
+        path.join(bare, 'projects', 'C--work-busy', `${quiet}.jsonl`),
+        JSON.stringify({ type: 'user', cwd: '/work/quiet' }) + '\n',
+      );
+
+      withEnv({ CLAUDE_CODE_SESSION_ID: quiet, CLAUDE_SESSION_ID: null }, () => {
+        const current = new ClaudeCodeAdapter(bare).currentSession();
+        assert.equal(current.sessionId, quiet);
+        assert.equal(current.agentCount, 0);
+        assert.equal(current.projectPath, '/work/quiet');
+      });
+    } finally {
+      removeDir(bare);
+    }
+  });
+
+  it('still falls back when the named session is unknown to this installation', () => {
+    withEnv(
+      { CLAUDE_CODE_SESSION_ID: '99999999-9999-9999-9999-999999999999', CLAUDE_SESSION_ID: null },
+      () => {
+        const current = new ClaudeCodeAdapter(root).currentSession();
+        assert.equal(current.sessionId, '3a372c2d-5be3-43b6-a7d5-29cc9e032cd7');
+      },
+    );
+  });
+
   it('ignores a malformed session id in the environment', () => {
     withEnv({ CLAUDE_CODE_SESSION_ID: 'not-a-uuid', CLAUDE_SESSION_ID: null }, () => {
       assert.equal(new ClaudeCodeAdapter(root).currentSessionId(), null);

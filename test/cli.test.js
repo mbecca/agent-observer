@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
 
 import { EXIT_ERROR, EXIT_NO_DATA, EXIT_OK, applyFilters, main, parseArgs } from '../src/cli.js';
@@ -215,6 +217,48 @@ describe('cli end to end', () => {
     assert.equal(await code, EXIT_OK);
     assert.match(capture.stdout, /Implement Task 1/);
     assert.match(capture.stdout, /Final whole-branch review/);
+  });
+
+  it('reports a session that dispatched nothing as empty, not as another session', async () => {
+    const bare = makeTempDir();
+    try {
+      writeClaudeFixture(bare, {
+        'bbbbbbbb-1111-2222-3333-444444444444': {
+          project: 'C--work-busy',
+          cwd: '/work/busy',
+          agents: [{ id: 'agent-x', model: 'opus', description: 'Review everything' }],
+        },
+      });
+      const quiet = 'cccccccc-1111-2222-3333-444444444444';
+      fs.writeFileSync(
+        path.join(bare, 'projects', 'C--work-busy', `${quiet}.jsonl`),
+        JSON.stringify({ type: 'user', cwd: '/work/quiet' }) + '\n',
+      );
+
+      const capture = captureIo();
+      const code = await withEnv(
+        { CLAUDE_CONFIG_DIR: bare, CODEX_HOME: bare, CLAUDE_CODE_SESSION_ID: quiet, NO_COLOR: '1' },
+        () => main(['current'], capture.io),
+      );
+      assert.equal(await code, EXIT_OK);
+      assert.match(capture.stdout, new RegExp(quiet));
+      assert.match(capture.stdout, /No subagents recorded for this session/);
+      assert.doesNotMatch(capture.stdout, /Review everything/);
+    } finally {
+      removeDir(bare);
+    }
+  });
+
+  it('says so when it falls back to a different session', async () => {
+    // The environment names a session this installation has never seen.
+    const capture = captureIo();
+    const code = await withEnv(
+      { ...fixtureEnv(), CLAUDE_CODE_SESSION_ID: '99999999-9999-9999-9999-999999999999' },
+      () => main(['current'], capture.io),
+    );
+    assert.equal(await code, EXIT_OK);
+    assert.match(capture.stdout, /has no recorded subagents/);
+    assert.match(capture.stdout, /Showing the most recent session that does/);
   });
 
   it('renders a tree', async () => {

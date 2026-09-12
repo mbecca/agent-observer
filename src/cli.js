@@ -269,12 +269,21 @@ export function applyFilters(sessions, args) {
   return args.limit ? result.slice(0, args.limit) : result;
 }
 
-/** The running session, preferring an adapter that knows it outright. */
+/**
+ * The running session, preferring an adapter that knows it outright.
+ *
+ * Returns the session together with the id the environment named, so the caller
+ * can tell the user when it had to fall back to a different one. Silently
+ * reporting another session's subagents as "current" is the one failure mode
+ * this tool must not have.
+ */
 export function findCurrent(args) {
   for (const adapter of resolveAdapters(args.adapter)) {
     try {
       const session = adapter.currentSession();
-      if (session) return session;
+      if (!session) continue;
+      const requestedId = adapter.currentSessionId ? adapter.currentSessionId() : null;
+      return { session, requestedId, exact: !requestedId || requestedId === session.sessionId };
     } catch {
       // Try the next adapter.
     }
@@ -336,7 +345,9 @@ function isDataFormat(format) {
 // -- commands --------------------------------------------------------------
 
 function renderOneSession(session, args, write) {
-  const sessions = applyFilters([session], args);
+  // The user named this session, so an empty one is an answer, not noise. The
+  // hide-empty rule exists for listings only.
+  const sessions = applyFilters([session], { ...args, all: true });
   if (!sessions.length) {
     write('That session has nothing matching those filters.');
     return EXIT_NO_DATA;
@@ -359,9 +370,21 @@ function renderOneSession(session, args, write) {
 }
 
 function cmdCurrent(args, io) {
-  const session = findCurrent(args);
-  if (!session) return noData(args, io.write);
-  return renderOneSession(session, args, io.write);
+  const found = findCurrent(args);
+  if (!found) return noData(args, io.write);
+
+  if (!found.exact && !isDataFormat(args.format)) {
+    const p = painterFor(args);
+    io.write(
+      p.paint(
+        `Session ${found.requestedId} has no recorded subagents. ` +
+          'Showing the most recent session that does:',
+        'dim',
+      ),
+    );
+    io.write('');
+  }
+  return renderOneSession(found.session, args, io.write);
 }
 
 function cmdSession(args, io) {
@@ -392,13 +415,27 @@ function cmdSessions(args, io) {
 
 function cmdTree(args, io) {
   const sessionId = args.positional[0];
-  const session = sessionId ? findSession(args, sessionId) : findCurrent(args);
-  if (!session) {
-    if (sessionId) {
+  let session;
+  if (sessionId) {
+    session = findSession(args, sessionId);
+    if (!session) {
       io.warn(`No session matching '${sessionId}'.`);
       return EXIT_NO_DATA;
     }
-    return noData(args, io.write);
+  } else {
+    const found = findCurrent(args);
+    if (!found) return noData(args, io.write);
+    if (!found.exact && !isDataFormat(args.format)) {
+      io.write(
+        painterFor(args).paint(
+          `Session ${found.requestedId} has no recorded subagents. ` +
+            'Showing the most recent session that does:',
+          'dim',
+        ),
+      );
+      io.write('');
+    }
+    session = found.session;
   }
   return renderOneSession(session, { ...args, format: args.format || 'tree' }, io.write);
 }

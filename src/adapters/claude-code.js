@@ -214,22 +214,56 @@ export class ClaudeCodeAdapter {
    * plain shell there is no such signal, so fall back to the most recently
    * updated session whose project matches cwd, and only then to the newest
    * session anywhere.
+   *
+   * When the environment does name a session that dispatched nothing, return
+   * that session empty. "This session used no subagents" is the true answer,
+   * and showing a different session's subagents instead would be a lie.
    */
   currentSession() {
-    const all = this.sessions();
-    if (!all.length) return null;
-
     const sessionId = this.currentSessionId();
+    const all = this.sessions();
+
     if (sessionId) {
       const match = all.find((s) => s.sessionId === sessionId);
       if (match) return match;
+      const empty = this.#emptySession(sessionId);
+      if (empty) return empty;
     }
+
+    if (!all.length) return null;
 
     const cwd = path.resolve(process.cwd()).toLowerCase();
     const local = all.find(
       (s) => s.projectPath && path.resolve(s.projectPath).toLowerCase() === cwd,
     );
     return local || all[0];
+  }
+
+  /**
+   * A Session for an id that exists on disk but recorded no subagents.
+   * Returns null when the id is not a session this installation knows about.
+   */
+  #emptySession(sessionId) {
+    if (!isDir(this.projectsDir)) return null;
+
+    for (const project of listDirs(this.projectsDir)) {
+      const sessionDir = path.join(project.path, sessionId);
+      const transcript = path.join(project.path, `${sessionId}.jsonl`);
+      if (!isDir(sessionDir) && !isFile(transcript)) continue;
+
+      const projectPath = readCwd(transcript) || decodeProjectDir(project.name);
+      return new Session({
+        provider: this.name,
+        sessionId,
+        project: projectLabel(projectPath, project.name),
+        projectPath,
+        startedAt: mtime(transcript) || mtime(sessionDir),
+        updatedAt: mtime(transcript) || mtime(sessionDir),
+        agents: [],
+        sourcePath: isDir(sessionDir) ? sessionDir : transcript,
+      });
+    }
+    return null;
   }
 }
 

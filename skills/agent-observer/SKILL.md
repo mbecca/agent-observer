@@ -64,8 +64,16 @@ out the pattern, for example cheap models for implementation and stronger ones
 for review, and note anything that contradicts what the orchestrator claimed.
 
 If the tool reports no activity, say so plainly. A session that dispatched no
-subagents produces no rows, and that is a real answer rather than a failure. Run
-`doctor` before suggesting anything is broken.
+subagents produces no rows, and that is a real answer rather than a failure. Do
+not go looking for another session to fill the silence. Run `doctor` before
+suggesting anything is broken.
+
+**Check the session id in the header before you report.** When the session you
+are in dispatched nothing, `current` says "No subagents recorded for this
+session"; answer that the session used none. When it cannot find the session at
+all it falls back to the most recent one and prints a line saying so. Repeat
+that caveat to the user rather than presenting another session's work as this
+one's.
 
 ## Other agents
 
