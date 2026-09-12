@@ -48,7 +48,9 @@ function markdownFiles(dir, depth = 4) {
     return found;
   }
   for (const name of entries) {
-    if (name === 'node_modules' || name === '.git') continue;
+    // Skip version control and local agent/editor working directories.
+    // These hold local working files, not shipped documentation.
+    if (name === 'node_modules' || name === '.git' || name === '.superpowers' || name === '.claude' || name === '.worktrees') continue;
     const full = path.join(dir, name);
     if (statSync(full).isDirectory()) found.push(...markdownFiles(full, depth - 1));
     else if (name.endsWith('.md')) found.push(full);
