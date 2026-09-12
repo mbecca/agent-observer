@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-12
+
+Tooling only. Nothing about the plugin or the tool behaves differently, and
+updating from 0.2.1 changes nothing you can observe. The release exists so the
+published version and the repository tell the same story.
+
 ### Changed
 
 - The CI plugin validation now runs with --strict, matching the check the
@@ -116,7 +122,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/mbecca/agent-observer/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/mbecca/agent-observer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mbecca/agent-observer/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mbecca/agent-observer/compare/v0.1.0...v0.1.1
