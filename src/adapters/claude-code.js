@@ -29,6 +29,7 @@ import {
   parseTimestamp,
 } from '../core/model.js';
 import {
+  baseName,
   countLines,
   firstLastLine,
   homeDir,
@@ -321,7 +322,9 @@ export function decodeProjectDir(encoded) {
 /** Short, recognisable project name for table columns. */
 function projectLabel(projectPath, encodedName) {
   if (projectPath) {
-    const base = path.basename(projectPath.replace(/[\\/]+$/, ''));
+    // The recorded cwd may use the other platform's separator, so this cannot
+    // use path.basename.
+    const base = baseName(projectPath);
     if (base) return base;
   }
   const parts = encodedName.split('-').filter(Boolean);

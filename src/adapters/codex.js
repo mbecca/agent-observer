@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { AgentRun, Capability, STATUS_UNKNOWN, Session, parseTimestamp } from '../core/model.js';
-import { homeDir, isDir, mtime, readJsonl, walkFiles } from '../core/util.js';
+import { baseName, homeDir, isDir, mtime, readJsonl, walkFiles } from '../core/util.js';
 
 export const PROVIDER = 'codex';
 
@@ -114,7 +114,7 @@ export class CodexAdapter {
     return new Session({
       provider: this.name,
       sessionId,
-      project: meta.cwd ? path.basename(String(meta.cwd).replace(/[\\/]+$/, '')) : null,
+      project: meta.cwd ? baseName(meta.cwd) : null,
       projectPath: meta.cwd ?? null,
       startedAt,
       updatedAt: mtime(file),

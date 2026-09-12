@@ -18,6 +18,23 @@ export function homeDir() {
   return os.homedir();
 }
 
+/**
+ * Last segment of a path, treating both `/` and `\` as separators whatever the
+ * host platform is.
+ *
+ * `path.basename` uses only the separator of the platform it runs on, so on
+ * Linux it returns the whole of `C:\Users\dev\my-repo` unchanged. Paths here are
+ * read out of an agent's own files and may have been recorded on a different
+ * operating system: a `.claude` directory shared between machines, or WSL
+ * reading the Windows one. Splitting on both is the only correct answer.
+ */
+export function baseName(target) {
+  if (!target) return '';
+  const trimmed = String(target).replace(/[\\/]+$/, '');
+  const parts = trimmed.split(/[\\/]/);
+  return parts[parts.length - 1] || trimmed;
+}
+
 /** Load a small JSON file, returning null instead of throwing. */
 export function readJson(file) {
   try {
