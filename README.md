@@ -1,12 +1,21 @@
 # agent-observer
 
+![Two panels. The first, dashed, shows an intended routing plan: cheap to implement, stronger to review, strongest for the last pass. The second shows what was actually recorded for each subagent, where one implementation ran on a standard model rather than a cheap one.](docs/banner.svg)
+
 See which subagents your coding agent ran, with which model, for which task.
 
-Orchestrators like [Superpowers](https://github.com/obra/superpowers) route work
-across models: a cheap one to implement, a stronger one to review, the strongest
-for a final pass. Whether that actually happened is a separate question from
-whether it was planned. Claude Code writes a metadata file for every subagent it
-dispatches, recording the model that really ran it. This reads those files.
+Orchestrators route work across models: a cheap one to implement, a stronger one
+to review, the strongest for a final pass. Whether that actually happened is a
+separate question from whether it was planned, and the answer is already on
+disk, because agents record what they dispatched. This reads those records.
+
+Claude Code is the first agent supported, since it writes a metadata file for
+every subagent naming the model that really ran it, and
+[Superpowers](https://github.com/obra/superpowers) is one orchestrator that
+produces the pattern above. Both are examples rather than the scope. The core
+knows nothing about either, and any agent that records its dispatches can be
+read the same way, through its own adapter or through the
+[common event format](docs/event-format.md).
 
 ```
 Session 3a372c2d-5be3-43b6-a7d5-29cc9e032cd7
@@ -135,7 +144,10 @@ memory, which is the point. There is also a slash command:
 /subagent-report --models --since 7d
 ```
 
-## How it works
+## How the Claude Code adapter works
+
+Each adapter reads one agent's own files. This is what the first one does; the
+shape differs per agent, which is exactly why the core never sees it.
 
 Claude Code records every dispatched subagent:
 
