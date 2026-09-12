@@ -99,6 +99,48 @@ if (missingSkills.length) {
   checked.push(`ok   CLAUDE.md names all ${EXPECTED_SKILLS.length} expected skills`);
 }
 
+/**
+ * Every `/agent-observer:x` the docs mention must be a command or skill this
+ * plugin actually ships, and every command shipped must be documented.
+ *
+ * The README once advertised `/subagent-report`, which is only the shorthand
+ * form. Plugin commands are namespaced as `/plugin:command`, and the bare name
+ * resolves only while nothing else has claimed it.
+ */
+const shipped = new Set();
+for (const dir of ['commands', 'skills']) {
+  const full = path.join(repoRoot, dir);
+  if (!existsSync(full)) continue;
+  for (const name of readdirSync(full)) {
+    if (dir === 'commands' && name.endsWith('.md')) shipped.add(name.replace(/\.md$/, ''));
+    if (dir === 'skills' && statSync(path.join(full, name)).isDirectory()) shipped.add(name);
+  }
+}
+
+const documented = new Set();
+for (const file of markdownFiles(repoRoot)) {
+  const text = readFileSync(file, 'utf8');
+  const relative = path.relative(repoRoot, file).split(path.sep).join('/');
+  for (const match of text.matchAll(/\/agent-observer:([a-z0-9-]+)/g)) {
+    documented.add(match[1]);
+    if (!shipped.has(match[1])) {
+      problems.push(`${relative} documents /agent-observer:${match[1]}, which this plugin does not ship.`);
+    }
+  }
+}
+
+const readme = existsSync(path.join(repoRoot, 'README.md'))
+  ? readFileSync(path.join(repoRoot, 'README.md'), 'utf8')
+  : '';
+for (const name of shipped) {
+  if (!readme.includes(name)) {
+    problems.push(`commands/ or skills/ ships '${name}', which the README never mentions.`);
+  }
+}
+if (shipped.size) {
+  checked.push(`ok   ${shipped.size} shipped command(s) and skill(s) match the docs`);
+}
+
 for (const line of checked) console.log(line);
 
 if (problems.length) {

@@ -26,6 +26,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The README documented the slash command as `/subagent-report`. Plugin commands
+  are namespaced, so the reliable form is `/agent-observer:subagent-report`; the
+  bare name resolves only while nothing else has claimed it. `check-docs` now
+  verifies that every command the docs mention is one the plugin ships, and that
+  every shipped command is documented.
 - The README opens on what agents and harnesses do, running workflows by
   dispatching subagents, rather than on a product. Claude Code and Superpowers
   are named only as examples. The core knows nothing about either, and any agent

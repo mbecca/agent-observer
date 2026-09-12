@@ -163,10 +163,14 @@ The bundled skill runs the tool and reports from its output rather than from
 memory, which is the point. There is also a slash command:
 
 ```
-/subagent-report
-/subagent-report --tree
-/subagent-report --models --since 7d
+/agent-observer:subagent-report
+/agent-observer:subagent-report --tree
+/agent-observer:subagent-report --models --since 7d
 ```
+
+Plugin commands are namespaced, and the bare `/subagent-report` works too as
+long as nothing else has claimed that name. The skill itself is
+`/agent-observer:agent-observer`, and takes the same arguments as the CLI.
 
 ## How the Claude Code adapter works
 
