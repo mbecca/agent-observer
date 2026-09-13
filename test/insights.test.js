@@ -12,7 +12,8 @@ import {
   theException,
 } from '../src/core/insights.js';
 
-/** Build a run with a known duration, in minutes for readability. */
+/** Build a run with a known duration, in minutes for readability. Pass durSec
+ * null for a run with no finishedAt, so its duration is unknown. */
 function run(task, model, startMin, durSec) {
   const startedAt = new Date(Date.UTC(2026, 7, 14, 13, 34, 55) + startMin * 60000);
   return new AgentRun({
@@ -22,7 +23,7 @@ function run(task, model, startMin, durSec) {
     model,
     task,
     startedAt,
-    finishedAt: new Date(startedAt.getTime() + durSec * 1000),
+    finishedAt: durSec === null ? null : new Date(startedAt.getTime() + durSec * 1000),
   });
 }
 
@@ -80,6 +81,31 @@ describe('modelRoleConcentration', () => {
     });
     assert.equal(modelRoleConcentration(mixed), null);
   });
+
+  it('does not resolve an inherited Object.prototype member as a role noun', () => {
+    // 'constructor' is a role name an adapter could plausibly produce, and it
+    // is also an inherited key on every plain object. ROLE_NOUNS['constructor']
+    // must not resolve to Object's constructor function.
+    const session = new Session({
+      sessionId: 's1',
+      agents: [
+        new AgentRun({
+          provider: 'claude-code', sessionId: 's1', agentId: 'a1',
+          model: 'haiku', role: 'constructor', task: 'x',
+        }),
+        new AgentRun({
+          provider: 'claude-code', sessionId: 's1', agentId: 'a2',
+          model: 'haiku', role: 'constructor', task: 'y',
+        }),
+        new AgentRun({
+          provider: 'claude-code', sessionId: 's1', agentId: 'a3',
+          model: 'haiku', role: 'constructor', task: 'z',
+        }),
+      ],
+    });
+    const text = modelRoleConcentration(session);
+    assert.match(text, /^Constructor ran on haiku in 3 of 3 tasks\.$/);
+  });
 });
 
 describe('dominantSubagent', () => {
@@ -109,6 +135,17 @@ describe('dominantSubagent', () => {
       ],
     });
     assert.equal(dominantSubagent(even), null);
+  });
+
+  it('stays silent when any run in the session has an unknown duration', () => {
+    // Otherwise identical to sddSession, which crosses the threshold, plus one
+    // run with no finishedAt. That run may have been running through the gap
+    // rule 4 would otherwise describe, so the rule must not fire.
+    const session = new Session({
+      sessionId: 's1',
+      agents: [...sddSession().agents, run('Unrecorded task', 'haiku', 25, null)],
+    });
+    assert.equal(dominantSubagent(session), null);
   });
 });
 
@@ -163,6 +200,16 @@ describe('outsideSubagents', () => {
       agents: [run('a', 'haiku', 0, 600), run('b', 'sonnet', 1, 600)],
     });
     assert.equal(outsideSubagents(overlapping), null);
+  });
+
+  it('stays silent when any run in the session has an unknown duration', () => {
+    // Otherwise identical to sddSession, which crosses the threshold, plus one
+    // run with no finishedAt. It may have run right through the reported gap.
+    const session = new Session({
+      sessionId: 's1',
+      agents: [...sddSession().agents, run('Unrecorded task', 'haiku', 25, null)],
+    });
+    assert.equal(outsideSubagents(session), null);
   });
 });
 

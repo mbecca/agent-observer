@@ -36,6 +36,16 @@ function timed(session) {
   return session.agents.filter((a) => typeof a.durationSeconds === 'number');
 }
 
+/**
+ * True only when every run in the session has a known duration. Rules 2 and 4
+ * describe a share of *all* subagent or elapsed time; if even one run's
+ * duration is unknown, that run may have filled the gap or dominated the
+ * total, and the arithmetic the sentence reports would be a guess.
+ */
+function everyRunTimed(session) {
+  return session.agents.length > 0 && session.agents.every((a) => typeof a.durationSeconds === 'number');
+}
+
 function subagentSeconds(session) {
   return timed(session).reduce((sum, a) => sum + a.durationSeconds, 0);
 }
@@ -76,11 +86,15 @@ export function modelRoleConcentration(session) {
   if (!leading || leading.runs.length < CONCENTRATION_MIN_RUNS) return null;
   const dominant = dominantModelOf(leading.runs);
   if (!dominant) return null;
-  const noun = ROLE_NOUNS[leading.role] || capitalise(leading.role);
+  // Object.hasOwn guards against a role named e.g. "constructor" resolving to
+  // an inherited Object.prototype member instead of falling through to
+  // capitalise().
+  const noun = Object.hasOwn(ROLE_NOUNS, leading.role) ? ROLE_NOUNS[leading.role] : capitalise(leading.role);
   return `${noun} ran on ${dominant.model} in ${dominant.count} of ${leading.runs.length} tasks.`;
 }
 
 export function dominantSubagent(session) {
+  if (!everyRunTimed(session)) return null;
   const runs = timed(session);
   if (runs.length < DOMINANT_MIN_TIMED) return null;
   const total = subagentSeconds(session);
@@ -103,7 +117,7 @@ export function theException(session) {
   if (others.length !== 1) return null;
   const noun = leading.role === 'unknown'
     ? 'run'
-    : (ROLE_NOUNS[leading.role] || leading.role).toLowerCase();
+    : (Object.hasOwn(ROLE_NOUNS, leading.role) ? ROLE_NOUNS[leading.role] : leading.role).toLowerCase();
   return (
     `One ${noun} ran on ${others[0].model || 'an unrecorded model'} where the other ` +
     `${numberWord(dominant.count)} ran on ${dominant.model}.`
@@ -111,6 +125,7 @@ export function theException(session) {
 }
 
 export function outsideSubagents(session) {
+  if (!everyRunTimed(session)) return null;
   const elapsed = elapsedSeconds(session);
   const busy = subagentSeconds(session);
   if (!elapsed || !busy) return null;
