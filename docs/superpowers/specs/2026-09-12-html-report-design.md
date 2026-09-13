@@ -77,7 +77,10 @@ changes. No core model changes.
 These are requirements, and each one is a test.
 
 - **One file, no network.** CSS inline. No external fonts, no CDN, no images.
-  The output must contain no `<script`, no `http://` and no `https://`.
+  The output must contain no `<script` and no network references: no script,
+  stylesheet, image or other resource loaded from a URL. (Task text on disk
+  may itself contain a URL; that is printed as escaped text and fetches
+  nothing.)
 - **No JavaScript.** The report is for reading and sharing, not operating.
 - **Colour is never the only signal.** Every row carries the model name as a
   text chip, for readers who cannot separate green from amber and for anyone
@@ -141,9 +144,9 @@ Emitted in this fixed order. Each is a pure function returning a string or
 | Rule | Condition | Example |
 |---|---|---|
 | Model-role concentration | A role has 3+ runs and one model accounts for 2/3 or more of them. Evaluated only for the **leading role**, the one with the most runs, ties broken alphabetically. That cap keeps the paragraph at four sentences. | "Implementation ran on haiku in 3 of 4 tasks." |
-| Dominant subagent | 4+ subagents have known durations and the longest is 25% or more of subagent time. | "One subagent, the final whole-branch review, took 10m35s, 26% of all subagent time." |
+| Dominant subagent | 4+ subagents have known durations and the longest is 25% or more of subagent time, and every run has a known duration. | "One subagent, the final whole-branch review, took 10m35s, 26% of all subagent time." |
 | The exception | The leading role qualified for rule 1 and exactly one of its runs used a different model. Same role as rule 1, never a different one. | "One implementation ran on sonnet where the other three ran on haiku." |
-| Work outside subagents | Elapsed time and subagent time are both known, subagent time does not exceed elapsed, and the gap is 10% or more of elapsed. | "16% of elapsed time fell outside any subagent." |
+| Work outside subagents | Elapsed time and subagent time are both known, subagent time does not exceed elapsed, the gap is 10% or more of elapsed, and every run has a known duration. | "16% of elapsed time fell outside any subagent." |
 
 ### Honesty notes carried into the report
 
@@ -195,3 +198,32 @@ session that returns nothing at all.
 ## Release
 
 A new output format is a minor version. Nothing existing changes behaviour.
+
+## Delivered and deferred
+
+This branch delivers `--format html` for a single session: title and session
+identity, the interpretive paragraph (all four rules, with the role-inferred
+note in small print whenever a role-leaning rule fires), and the timeline —
+one row per subagent with task name, model chip, proportional bar, and
+duration, or the ordered-list fallback when no run has a usable duration. The
+document is one self-contained file with a print stylesheet, no script, and no
+network reference of any kind.
+
+Deferred to a follow-up:
+
+- The KPI row (subagents, duration, turns, distinct models, share of elapsed
+  time outside any subagent).
+- Model and role tallies.
+- The multi-session index of session cards.
+- A report date and a visible document title.
+- Using the validated light palette in print via CSS variables, rather than
+  the fixed print colours used today.
+- Matching model colours by substring, as the terminal renderer does, instead
+  of an exact lowercase match.
+- A cap on a stale running subagent stretching the axis to now: a run with no
+  end long after the session's last timestamp currently draws a bar spanning
+  the whole gap.
+- The leading-role-only limitation: rules 1 and 3 only ever look at the role
+  with the most runs. On real data the paragraph can describe review routing
+  while the implementation that ran on a stronger model goes unmentioned,
+  because it lost the tie for "leading role" to review.
