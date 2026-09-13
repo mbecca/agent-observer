@@ -6,14 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-13
+
 ### Added
 
 - An `opencode` adapter, reading OpenCode's SQLite database directly: model,
   subagent type, task description, status, start and end time, turn count, and
   token usage and cost (in `extra`). A dispatch nested inside a dispatched
   session is read too, at the matching spawn depth, grouped under the same
-  top-level session. Needs a Node version that ships `node:sqlite` (Node 22 or
-  newer); older Nodes see it as unavailable rather than failing.
+  top-level session. It needs a Node version that ships `node:sqlite` without a
+  flag, which Node 18 and 20 do not; there it reports itself unavailable rather
+  than failing, and the rest of the tool is unaffected.
 
 ## [0.3.0] - 2026-09-13
 
@@ -157,7 +160,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mbecca/agent-observer/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mbecca/agent-observer/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/mbecca/agent-observer/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/mbecca/agent-observer/compare/v0.2.0...v0.2.1
