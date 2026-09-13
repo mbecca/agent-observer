@@ -24,6 +24,7 @@ function runWatch(root, { runMs = 2500, timeoutMs = 15000 } = {}) {
         ...process.env,
         CLAUDE_CONFIG_DIR: root,
         CODEX_HOME: root,
+        XDG_DATA_HOME: root,
         AGENT_OBSERVER_EVENTS: path.join(root, 'no-events'),
         NO_COLOR: '1',
       },

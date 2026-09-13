@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An `opencode` adapter, reading OpenCode's SQLite database directly: model,
+  subagent type, task description, status, start and end time, turn count, and
+  token usage and cost (in `extra`). A dispatch nested inside a dispatched
+  session is read too, at the matching spawn depth, grouped under the same
+  top-level session. Needs a Node version that ships `node:sqlite` (Node 22 or
+  newer); older Nodes see it as unavailable rather than failing.
+
 ## [0.3.0] - 2026-09-13
 
 ### Added

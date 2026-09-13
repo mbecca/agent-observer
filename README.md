@@ -154,7 +154,7 @@ Every command takes them.
 | `--role <role>` | `implement`, `review`, `fix`, `test`, `plan`, `explore`, `document`. |
 | `--limit <n>` | At most this many sessions. |
 | `--all` | Include sessions that dispatched no subagents. |
-| `--adapter <name>` | `claude-code`, `codex`, `generic`, `auto`, `all`. |
+| `--adapter <name>` | `claude-code`, `codex`, `opencode`, `generic`, `auto`, `all`. |
 | `-f, --format <fmt>` | `table`, `tree`, `timeline`, `summary`, `json`, `ndjson`, `csv`, `markdown`, `html`. |
 | `-o, --output <file>` | Write to a file instead of stdout. |
 | `--no-color` | No ANSI escapes. Also honours `NO_COLOR`. |
@@ -237,6 +237,7 @@ one shared model.
 |---|---|
 | `claude-code` | Full support: model, type, task, depth, timing, turns. |
 | `codex` | Session model only. Codex rollouts record no per-subagent metadata, and the adapter says so rather than guessing. |
+| `opencode` | Full support, read from OpenCode's SQLite database: model, type, task, depth, timing, turns, tokens and cost. Needs a Node that ships `node:sqlite` (Node 22 or newer). |
 | `generic` | Reads the [common event format](docs/event-format.md) from any agent. |
 
 To make any other agent observable, emit one JSON object per line and point the
@@ -262,8 +263,10 @@ console.log(sessions[0].modelCounts()); // { sonnet: 6, haiku: 3, opus: 1 }
 
 ## What it does not do
 
-- It does not report token usage or cost. Claude Code does not record either in
-  the subagent metadata.
+- Claude Code and Codex do not record token usage or cost in the subagent metadata.
+  OpenCode does record tokens and cost; the OpenCode adapter carries them in each
+  run's `extra` data rather than in the command-line reports. To see them, export
+  to JSON and inspect the `extra` field.
 - It does not tell you which model *should* have run a task. It reports what did.
 - It does not read subagent transcripts for content, only their timestamps and
   line count.

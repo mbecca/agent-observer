@@ -51,6 +51,7 @@ export {
   ClaudeCodeAdapter,
   CodexAdapter,
   GenericAdapter,
+  OpencodeAdapter,
   adapterNames,
   allAdapters,
   availableAdapters,
