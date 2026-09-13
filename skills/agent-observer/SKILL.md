@@ -78,8 +78,10 @@ one's.
 ## Other agents
 
 `--adapter` selects which agent's data to read: `claude-code` (full support),
-`codex` (session model only, no per-subagent attribution), `generic` (any agent
-that emits the common event format), `auto` for everything with data, or `all`.
+`codex` (session model only, no per-subagent attribution), `opencode` (full
+support, read from its SQLite database; needs a Node with `node:sqlite`,
+version 22 or newer), `generic` (any agent that emits the common event
+format), `auto` for everything with data, or `all`.
 
 Run `adapters` to show what each one can and cannot observe here. When an agent
 does not record subagent models, say that outright rather than guessing.
