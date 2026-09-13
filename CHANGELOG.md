@@ -6,13 +6,31 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-13
+
 ### Added
 
 - `--format html` writes a self-contained report: a timeline of which model ran
   each subagent and for how long, with a short paragraph naming what the routing
-  did. One file, no JavaScript, no network references, and a print stylesheet.
-  The palette is three colours because no fourth passed the colourblind
-  separation check against them; every row names its model in text regardless.
+  did. One file, no JavaScript, no network references, and a print stylesheet
+  that keeps the bars. The palette is three colours because no fourth passed the
+  colourblind separation check against them; every row names its model in text
+  regardless.
+- The paragraph's sentences are arithmetic with declared thresholds and stay
+  silent below them. The two that make claims about all subagent time also stay
+  silent when any run's duration is unknown, and the report notes in small print
+  when a sentence relies on inferred roles.
+
+### Fixed
+
+- `check-docs` no longer scans gitignored agent working directories, which made
+  local verification fail on scratch files CI never sees.
+
+### Not yet included
+
+The report is a first cut of the approved dashboard. The KPI row, model and role
+tallies, the multi-session index and a report date are listed as deferred in the
+spec's `Delivered and deferred` section.
 
 ## [0.2.2] - 2026-09-12
 
@@ -130,7 +148,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mbecca/agent-observer/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/mbecca/agent-observer/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/mbecca/agent-observer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mbecca/agent-observer/compare/v0.1.1...v0.2.0
