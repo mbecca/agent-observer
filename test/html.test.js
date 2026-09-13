@@ -63,9 +63,27 @@ describe('toHtml constraints', () => {
     assert.match(html, /@media print/);
   });
 
+  it('forces bars, tracks and chips to print their backgrounds', () => {
+    // Bars and tracks are CSS backgrounds, which browsers drop when printing
+    // unless told otherwise; without this the printed timeline is blank.
+    assert.match(html, /print-color-adjust:\s*exact/);
+  });
+
   it('opens and closes its tags evenly', () => {
-    const opens = (html.match(/<(div|section|span|p|h1|h2|table|tr|td)\b/g) || []).length;
-    const closes = (html.match(/<\/(div|section|span|p|h1|h2|table|tr|td)>/g) || []).length;
+    const opens = (html.match(/<(div|section|span|p|h1|h2|table|tr|td|ul|li)\b/g) || []).length;
+    const closes = (html.match(/<\/(div|section|span|p|h1|h2|table|tr|td|ul|li)>/g) || []).length;
+    assert.equal(opens, closes);
+  });
+
+  it('opens and closes its tags evenly for the fallback-list output', () => {
+    // No run has a duration, so toHtml renders the <ul class="fallback"> list
+    // rather than the timeline; that path has its own tag balance to check.
+    const fallback = toHtml(
+      [session([run('A', 'haiku', 0, null), run('B', 'sonnet', 2, null)])],
+      { now: NOW },
+    );
+    const opens = (fallback.match(/<(div|section|span|p|h1|h2|table|tr|td|ul|li)\b/g) || []).length;
+    const closes = (fallback.match(/<\/(div|section|span|p|h1|h2|table|tr|td|ul|li)>/g) || []).length;
     assert.equal(opens, closes);
   });
 });
@@ -77,10 +95,63 @@ describe('toHtml insights', () => {
   });
 });
 
+describe('toHtml role-inferred note', () => {
+  // Three implementations on haiku trips modelRoleConcentration (rule 1),
+  // which leans on role, so the note must be present.
+  const roleAgents = [
+    run('Implement a', 'haiku', 0, 60),
+    run('Implement b', 'haiku', 2, 60),
+    run('Implement c', 'haiku', 4, 60),
+  ];
+
+  it('appears when a role-leaning rule fires', () => {
+    const html = toHtml([session(roleAgents)], { now: NOW });
+    assert.match(html, /class="note"/);
+    assert.match(html, /Roles are inferred from task descriptions/);
+  });
+
+  it('is absent when only a non-role rule fires', () => {
+    // Four distinct roles (one run each) never reach the 3-run minimum rules
+    // 1 and 3 need, so only the duration-based rules 2 and 4 can fire.
+    const html = toHtml(
+      [session([
+        run('Implement a', 'haiku', 0, 10),
+        run('Review b', 'haiku', 1, 10),
+        run('Test c', 'haiku', 2, 10),
+        run('Fix d', 'haiku', 3, 600),
+      ])],
+      { now: NOW },
+    );
+    assert.match(html, /class="lead"/);
+    assert.doesNotMatch(html, /class="note"/);
+  });
+
+  it('is absent when no rule fires at all', () => {
+    const html = toHtml([session([run('Implement one thing', 'haiku', 0, 60)])], { now: NOW });
+    assert.doesNotMatch(html, /class="note"/);
+  });
+});
+
 describe('toHtml empty sessions', () => {
   it('says a session dispatched nothing instead of drawing an empty chart', () => {
     const html = toHtml([session([])], { now: NOW });
     assert.match(html, /No subagents recorded/i);
+  });
+});
+
+describe('toHtml subagent count plural', () => {
+  it('uses the singular for exactly one subagent', () => {
+    const html = toHtml([session([run('Implement Task 1', 'haiku', 0, 60)])], { now: NOW });
+    assert.match(html, /1 subagent\b/);
+    assert.doesNotMatch(html, /1 subagents/);
+  });
+
+  it('uses the plural for more than one subagent', () => {
+    const html = toHtml(
+      [session([run('Implement Task 1', 'haiku', 0, 60), run('Review Task 1', 'sonnet', 4, 60)])],
+      { now: NOW },
+    );
+    assert.match(html, /2 subagents/);
   });
 });
 
@@ -141,6 +212,20 @@ describe('toHtml timeline edge cases', () => {
     );
     assert.match(html, /class="bar running"/);
     assert.match(html, /running/i);
+  });
+
+  it('labels a finished run with an unusable duration with a dash, not running', () => {
+    // finishedAt earlier than startedAt: the run is over (finishedAt is set)
+    // but durationSeconds is null. It must not read as still in progress.
+    const startedAt = new Date(Date.UTC(2026, 7, 14, 13, 34, 55));
+    const backwards = new AgentRun({
+      provider: 'claude-code', sessionId: 's1', agentId: 'a-backwards',
+      model: 'haiku', task: 'Confused run', startedAt,
+      finishedAt: new Date(startedAt.getTime() - 60000),
+    });
+    const html = toHtml([session([run('Implement Task 1', 'haiku', 0, 60), backwards])], { now: NOW });
+    assert.doesNotMatch(html, /class="bar running"/);
+    assert.match(html, /class="dur">—</);
   });
 
   it('renders an unrecorded model as unknown rather than as a colour', () => {

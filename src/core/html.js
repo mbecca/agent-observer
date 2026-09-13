@@ -11,7 +11,7 @@
  * colours (see PALETTE below).
  */
 
-import { insightsFor } from './insights.js';
+import { insightsFor, modelRoleConcentration, theException } from './insights.js';
 
 /**
  * Validated against the dataviz six checks, all-pairs, in both modes.
@@ -41,9 +41,14 @@ function colourFor(model) {
 function renderInsights(session) {
   const lines = insightsFor(session);
   if (!lines.length) return '';
-  return (
-    '<p class="lead">' + lines.map((l) => escapeHtml(l)).join(' ') + '</p>'
-  );
+  const lead = '<p class="lead">' + lines.map((l) => escapeHtml(l)).join(' ') + '</p>';
+  // Rules 1 and 3 lean on role, which is inferred from task text rather than
+  // recorded by the agent. Say so in small print whenever either one spoke.
+  const leansOnRole = modelRoleConcentration(session) !== null || theException(session) !== null;
+  const note = leansOnRole
+    ? '<p class="note">Roles are inferred from task descriptions; the agent does not record them.</p>'
+    : '';
+  return lead + note;
 }
 
 /** Earliest start and latest end across a session, treating now as the end of a running run. */
@@ -66,9 +71,14 @@ function renderRow(agent, bounds, now) {
   const left = ((startedAt - bounds.from) / (bounds.to - bounds.from)) * 100;
   const width = Math.max(0.4, ((endsAt - startedAt) / (bounds.to - bounds.from)) * 100);
 
-  const duration = agent.durationSeconds === null || agent.durationSeconds === undefined
+  // `running` (no finishedAt) is the only case that reads as "running"; a
+  // finished run whose duration is unusable (e.g. finishedAt before
+  // startedAt) is over, just not measurable, so it shows a dash instead.
+  const duration = running
     ? 'running'
-    : formatDuration(agent.durationSeconds);
+    : (agent.durationSeconds === null || agent.durationSeconds === undefined
+      ? '—'
+      : formatDuration(agent.durationSeconds));
 
   return (
     `<div class="row">` +
@@ -108,10 +118,11 @@ function formatDuration(seconds) {
 }
 
 function renderSession(session, now) {
+  const count = session.agentCount;
   const head =
     `<h2>${escapeHtml(session.sessionId)}</h2>` +
     `<p class="ident">${escapeHtml(session.project || '')} · ` +
-    `${escapeHtml(session.provider)} · ${session.agentCount} subagents</p>`;
+    `${escapeHtml(session.provider)} · ${count} subagent${count === 1 ? '' : 's'}</p>`;
 
   if (!session.agentCount) {
     return `<section>${head}<p class="empty">No subagents recorded for this session.</p></section>`;
@@ -135,6 +146,7 @@ h2 { font-size:17px; margin:0 0 2px; }
 .lead { font-size:13px; line-height:1.6; background:rgba(56,189,248,.06);
   border-left:2px solid #38bdf8; padding:10px 13px; border-radius:0 6px 6px 0; }
 .empty { font-size:12px; color:var(--muted); }
+.note { font-size:10px; color:var(--muted); margin:4px 0 14px; }
 .row { display:flex; align-items:center; gap:9px; height:24px; font-size:11px; }
 .name { width:200px; flex:0 0 200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chip { flex:0 0 58px; text-align:center; font-size:9px; font-weight:700; padding:2px 0;
@@ -149,6 +161,10 @@ h2 { font-size:17px; margin:0 0 2px; }
 @media print {
   body { background:#fff; color:#1a1a19; }
   .lead { background:#f5f5f4; border-left-color:#57534e; }
-  .ident, .empty { color:#57534e; }
+  .ident, .empty, .note { color:#57534e; }
+  /* Bars, tracks and chips are CSS backgrounds/borders, which browsers omit
+     from a print job by default; without this the timeline prints blank. */
+  .track, .bar, .chip { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .name { white-space:normal; }
 }
 `;
