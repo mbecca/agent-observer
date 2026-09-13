@@ -9,9 +9,10 @@
 import { ClaudeCodeAdapter } from './claude-code.js';
 import { CodexAdapter } from './codex.js';
 import { GenericAdapter } from './generic.js';
+import { OpencodeAdapter } from './opencode.js';
 
 /** Order matters: `--adapter auto` picks every one that has data. */
-export const ADAPTER_CLASSES = [ClaudeCodeAdapter, CodexAdapter, GenericAdapter];
+export const ADAPTER_CLASSES = [ClaudeCodeAdapter, CodexAdapter, OpencodeAdapter, GenericAdapter];
 
 export function allAdapters() {
   return ADAPTER_CLASSES.map((Cls) => new Cls());
@@ -41,4 +42,4 @@ export function resolveAdapters(name = 'auto') {
   return adapter ? [adapter] : [];
 }
 
-export { ClaudeCodeAdapter, CodexAdapter, GenericAdapter };
+export { ClaudeCodeAdapter, CodexAdapter, GenericAdapter, OpencodeAdapter };

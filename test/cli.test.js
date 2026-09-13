@@ -147,6 +147,7 @@ describe('cli end to end', () => {
     CLAUDE_CODE_SESSION_ID: null,
     CLAUDE_SESSION_ID: null,
     CODEX_HOME: root, // no sessions/ dir here, so the Codex adapter stays quiet
+    XDG_DATA_HOME: root, // no opencode/ dir here, so the OpenCode adapter stays quiet
     AGENT_OBSERVER_EVENTS: null,
     NO_COLOR: '1',
   });
@@ -237,7 +238,7 @@ describe('cli end to end', () => {
 
       const capture = captureIo();
       const code = await withEnv(
-        { CLAUDE_CONFIG_DIR: bare, CODEX_HOME: bare, CLAUDE_CODE_SESSION_ID: quiet, NO_COLOR: '1' },
+        { CLAUDE_CONFIG_DIR: bare, CODEX_HOME: bare, XDG_DATA_HOME: bare, CLAUDE_CODE_SESSION_ID: quiet, NO_COLOR: '1' },
         () => main(['current'], capture.io),
       );
       assert.equal(await code, EXIT_OK);
@@ -330,6 +331,7 @@ describe('cli end to end', () => {
     assert.equal(code, EXIT_OK);
     assert.match(stdout, /Claude Code/);
     assert.match(stdout, /OpenAI Codex CLI/);
+    assert.match(stdout, /OpenCode/);
     assert.match(stdout, /Generic/);
   });
 
@@ -350,7 +352,7 @@ describe('cli end to end', () => {
     try {
       const capture = captureIo();
       const code = await withEnv(
-        { CLAUDE_CONFIG_DIR: empty, CODEX_HOME: empty, AGENT_OBSERVER_EVENTS: empty, NO_COLOR: '1' },
+        { CLAUDE_CONFIG_DIR: empty, CODEX_HOME: empty, XDG_DATA_HOME: empty, AGENT_OBSERVER_EVENTS: empty, NO_COLOR: '1' },
         () => main(['sessions'], capture.io),
       );
       assert.equal(await code, EXIT_NO_DATA);
