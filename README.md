@@ -263,8 +263,10 @@ console.log(sessions[0].modelCounts()); // { sonnet: 6, haiku: 3, opus: 1 }
 
 ## What it does not do
 
-- It does not report token usage or cost. Claude Code does not record either in
-  the subagent metadata.
+- Claude Code and Codex do not record token usage or cost in the subagent metadata.
+  OpenCode does record tokens and cost; the OpenCode adapter carries them in each
+  run's `extra` data rather than in the command-line reports. To see them, export
+  to JSON and inspect the `extra` field.
 - It does not tell you which model *should* have run a task. It reports what did.
 - It does not read subagent transcripts for content, only their timestamps and
   line count.

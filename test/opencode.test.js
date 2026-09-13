@@ -387,6 +387,127 @@ describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available 
     assert.equal(running.turns, 0);
   });
 
+  it('returns null for turns when the child session was never observed', () => {
+    // Build a minimal database with a child session reference that has no
+    // matching session row (unobserved child).
+    const unobservedDir = makeTempDir();
+    try {
+      buildFixtureDb(unobservedDir, {
+        projects: [{ id: 'p1', worktree: '/work' }],
+        sessions: [
+          {
+            id: 'root-sess',
+            project_id: 'p1',
+            parent_id: null,
+            directory: '/work',
+            agent: 'build',
+            model: { id: 'claude-opus', providerID: 'anthropic' },
+            time_created: 1_000_000_000_000,
+          },
+          // Note: no child session row for 'child-unobs'
+        ],
+        messages: [],
+        parts: [
+          taskPart({
+            id: 'prt-unobs',
+            sessionId: 'root-sess',
+            messageId: 'msg-unobs',
+            status: 'completed',
+            start: 1_000_000_010_000,
+            end: 1_000_000_020_000,
+            description: 'Task with unobserved child',
+            subagentType: 'explore',
+            childSessionId: 'child-unobs',
+            modelId: 'gpt-4',
+            providerId: 'openai',
+          }),
+        ],
+      });
+
+      const unobservedAdapter = new OpencodeAdapter(unobservedDir);
+      const session = unobservedAdapter.session('root-sess');
+      assert.ok(session);
+      assert.equal(session.agentCount, 1);
+      const task = session.agents[0];
+      assert.equal(task.turns, null);
+      assert.equal(task.model, 'gpt-4'); // from task metadata
+    } finally {
+      removeDir(unobservedDir);
+    }
+  });
+
+  it('handles malformed JSON in child session model column gracefully', () => {
+    // Build a database where a child session's model column has bad JSON.
+    const malformedDir = makeTempDir();
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const dbPath = path.join(malformedDir, 'opencode.db');
+      const db = new DatabaseSync(dbPath);
+      db.exec(`
+        CREATE TABLE project (id TEXT PRIMARY KEY, worktree TEXT);
+        CREATE TABLE session (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          parent_id TEXT,
+          directory TEXT,
+          model TEXT
+        );
+        CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT);
+        CREATE TABLE part (
+          id TEXT PRIMARY KEY,
+          message_id TEXT,
+          session_id TEXT,
+          data TEXT
+        );
+      `);
+
+      const insertProject = db.prepare(
+        'INSERT INTO project (id, worktree) VALUES (?, ?)',
+      );
+      insertProject.run('p1', '/work');
+
+      const insertSession = db.prepare(
+        'INSERT INTO session (id, project_id, parent_id, directory, model) VALUES (?, ?, ?, ?, ?)',
+      );
+      // Parent session
+      insertSession.run('root-sess', 'p1', null, '/work', JSON.stringify({ id: 'claude-opus' }));
+      // Child session with malformed model JSON
+      insertSession.run('child-malformed', 'p1', 'root-sess', '/work', '{ broken json ');
+
+      const insertPart = db.prepare(
+        'INSERT INTO part (id, message_id, session_id, data) VALUES (?, ?, ?, ?)',
+      );
+      insertPart.run(
+        'prt-malformed',
+        'msg-malformed',
+        'root-sess',
+        JSON.stringify({
+          type: 'tool',
+          tool: 'task',
+          state: {
+            status: 'completed',
+            time: { start: 1_000_000_010_000, end: 1_000_000_020_000 },
+            input: { description: 'Task with bad model JSON', subagent_type: 'explore' },
+            metadata: { sessionId: 'child-malformed', model: { modelID: 'haiku', providerID: 'anthropic' } },
+          },
+        }),
+      );
+      db.close();
+
+      const malformedAdapter = new OpencodeAdapter(malformedDir);
+      const session = malformedAdapter.session('root-sess');
+      assert.ok(session);
+      assert.equal(session.agentCount, 1);
+      const task = session.agents[0];
+      // Model comes from task metadata when child session's model is malformed
+      assert.equal(task.model, 'haiku');
+      // Provider is not set since we couldn't parse the malformed model JSON
+      assert.equal(task.extra.providerID, undefined);
+    } finally {
+      removeDir(malformedDir);
+    }
+  });
+
   it('groups a nested dispatch under the root session at depth 2 with its parent recorded', () => {
     const session = adapter.session(ROOT_A);
     const direct = session.agents.find((a) => a.toolUseId === 'prt-a2');

@@ -388,7 +388,7 @@ function collectTasks(sessionId, depth, dispatchingAgentId, ctx) {
         spawnDepth: depth + 1,
         startedAt,
         finishedAt,
-        turns: childSessionId ? ctx.turnsBySession.get(childSessionId) ?? 0 : null,
+        turns: childSessionId && ctx.sessionsById.has(childSessionId) ? ctx.turnsBySession.get(childSessionId) ?? 0 : null,
         toolUseId: part.id,
         sourcePath: ctx.dbPath,
         extra,
