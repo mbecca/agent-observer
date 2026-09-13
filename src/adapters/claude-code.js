@@ -41,6 +41,11 @@ import {
   readJson,
   walkFiles,
 } from '../core/util.js';
+import { normaliseModel } from './models.js';
+
+// Re-exported so existing imports of normaliseModel from this module keep
+// working now that the shared adapters also need it.
+export { normaliseModel };
 
 export const PROVIDER = 'claude-code';
 
@@ -274,21 +279,6 @@ function extraFields(meta) {
     if (!KNOWN_META_KEYS.has(key)) extra[key] = value;
   }
   return extra;
-}
-
-/**
- * Trim a model id down to its family when it is a full API id, so that
- * `claude-haiku-4-5-20251001` and a bare `haiku` group together in reports.
- * `inherit` is left as-is because it is a real, distinct answer.
- */
-export function normaliseModel(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  const text = value.trim();
-  const lowered = text.toLowerCase();
-  for (const family of ['haiku', 'sonnet', 'opus', 'fable']) {
-    if (lowered.includes(family)) return family;
-  }
-  return text;
 }
 
 /** First/last timestamp and turn count from a subagent transcript. */
