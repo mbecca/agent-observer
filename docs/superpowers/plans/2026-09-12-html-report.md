@@ -150,14 +150,16 @@ describe('dominantSubagent', () => {
   });
 
   it('stays silent when the longest is under a quarter of the time', () => {
+    // Five equal runs put the longest at 20%. With only four, the longest is
+    // always at least 25%, so a four-run fixture cannot test this threshold.
     const even = new Session({
       sessionId: 's1',
       agents: [
         run('a', 'haiku', 0, 100), run('b', 'haiku', 2, 100),
-        run('c', 'haiku', 4, 100), run('d', 'haiku', 6, 110),
+        run('c', 'haiku', 4, 100), run('d', 'haiku', 6, 100),
+        run('e', 'haiku', 8, 100),
       ],
     });
-    assert.equal(even, even); // guard against typos below
     assert.equal(dominantSubagent(even), null);
   });
 });
@@ -239,6 +241,21 @@ const DOMINANT_MIN_TIMED = 4;
 const DOMINANT_SHARE = 0.25;
 const OUTSIDE_SHARE = 0.1;
 
+/**
+ * The noun each role takes in a sentence. Without this the output reads
+ * "Implement ran on haiku", which is not English.
+ */
+const ROLE_NOUNS = {
+  implement: 'Implementation',
+  review: 'Review',
+  fix: 'Fixing',
+  test: 'Testing',
+  plan: 'Planning',
+  explore: 'Exploration',
+  document: 'Documentation',
+  unknown: 'Work',
+};
+
 /** Runs that have a usable duration. */
 function timed(session) {
   return session.agents.filter((a) => typeof a.durationSeconds === 'number');
@@ -284,7 +301,7 @@ export function modelRoleConcentration(session) {
   if (!leading || leading.runs.length < CONCENTRATION_MIN_RUNS) return null;
   const dominant = dominantModelOf(leading.runs);
   if (!dominant) return null;
-  const noun = leading.role === 'unknown' ? 'Work' : capitalise(leading.role);
+  const noun = ROLE_NOUNS[leading.role] || capitalise(leading.role);
   return `${noun} ran on ${dominant.model} in ${dominant.count} of ${leading.runs.length} tasks.`;
 }
 
@@ -309,7 +326,9 @@ export function theException(session) {
   if (!dominant) return null;
   const others = leading.runs.filter((a) => (a.model || 'unknown') !== dominant.model);
   if (others.length !== 1) return null;
-  const noun = leading.role === 'unknown' ? 'run' : leading.role;
+  const noun = leading.role === 'unknown'
+    ? 'run'
+    : (ROLE_NOUNS[leading.role] || leading.role).toLowerCase();
   return (
     `One ${noun} ran on ${others[0].model || 'an unrecorded model'} where the other ` +
     `${numberWord(dominant.count)} ran on ${dominant.model}.`
@@ -734,7 +753,11 @@ function renderRow(agent, bounds, now) {
 }
 
 function renderTimeline(session, now) {
-  const bounds = span(session, now);
+  // A chart needs at least one finished run to be proportional to anything.
+  // With none, `span` would still produce bounds by treating `now` as every
+  // end, drawing bars whose lengths mean nothing.
+  const anyFinished = session.agents.some((a) => a.finishedAt);
+  const bounds = anyFinished ? span(session, now) : null;
   // No usable time information: list the runs rather than invent a chart.
   if (!bounds) {
     return (

@@ -155,7 +155,7 @@ Every command takes them.
 | `--limit <n>` | At most this many sessions. |
 | `--all` | Include sessions that dispatched no subagents. |
 | `--adapter <name>` | `claude-code`, `codex`, `generic`, `auto`, `all`. |
-| `-f, --format <fmt>` | `table`, `tree`, `timeline`, `summary`, `json`, `ndjson`, `csv`, `markdown`. |
+| `-f, --format <fmt>` | `table`, `tree`, `timeline`, `summary`, `json`, `ndjson`, `csv`, `markdown`, `html`. |
 | `-o, --output <file>` | Write to a file instead of stdout. |
 | `--no-color` | No ANSI escapes. Also honours `NO_COLOR`. |
 
@@ -164,6 +164,21 @@ agent-observer models --since 30d
 agent-observer sessions --project my-repo --format markdown
 agent-observer export --role review --format csv -o reviews.csv
 ```
+
+### HTML report
+
+`--format html` writes a single self-contained page: a timeline showing which
+model ran each subagent and for how long, plus a short paragraph naming what the
+routing did. No JavaScript, nothing fetched over the network, and it prints.
+
+```bash
+agent-observer current --format html -o report.html
+agent-observer session 3a372c2d --format html -o report.html
+agent-observer export --format html -o all-sessions.html
+```
+
+The report contains real task descriptions, exactly as `--format markdown` does.
+Read it before sending it to anyone.
 
 ## In Claude Code
 

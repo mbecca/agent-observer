@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `--format html` writes a self-contained report: a timeline of which model ran
+  each subagent and for how long, with a short paragraph naming what the routing
+  did. One file, no JavaScript, no network references, and a print stylesheet.
+  The palette is three colours because no fourth passed the colourblind
+  separation check against them; every row names its model in text regardless.
+
 ## [0.2.2] - 2026-09-12
 
 Tooling only. Nothing about the plugin or the tool behaves differently, and
