@@ -12,6 +12,7 @@ import {
   makeTempDir,
   opencodeTaskPart as taskPart,
   removeDir,
+  withEnv,
   writeOpencodeFixture as buildFixtureDb,
 } from './helpers.js';
 
@@ -503,8 +504,67 @@ describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available 
   });
 
   it('falls back to the newest session when cwd matches none of them', () => {
-    const current = adapter.currentSession();
-    assert.equal(current.sessionId, ROOT_A);
+    withEnv({ OPENCODE_SESSION_ID: null }, () => {
+      const current = adapter.currentSession();
+      assert.equal(current.sessionId, ROOT_A);
+    });
+  });
+
+  it('has no current session id when the environment names none', () => {
+    withEnv({ OPENCODE_SESSION_ID: null }, () => {
+      assert.equal(adapter.currentSessionId(), null);
+    });
+    withEnv({ OPENCODE_SESSION_ID: '   ' }, () => {
+      assert.equal(adapter.currentSessionId(), null);
+    });
+  });
+
+  it('prefers the session the environment names over a newer one', () => {
+    withEnv({ OPENCODE_SESSION_ID: ` ${ROOT_B} ` }, () => {
+      assert.equal(adapter.currentSessionId(), ROOT_B);
+      assert.equal(adapter.currentSession().sessionId, ROOT_B);
+    });
+  });
+
+  it('resolves a subagent session id to its top-level session', () => {
+    withEnv({ OPENCODE_SESSION_ID: CHILD_B1 }, () => {
+      assert.equal(adapter.currentSessionId(), ROOT_B);
+      assert.equal(adapter.currentSession().sessionId, ROOT_B);
+    });
+    withEnv({ OPENCODE_SESSION_ID: CHILD_A2_1 }, () => {
+      assert.equal(adapter.currentSession().sessionId, ROOT_A);
+    });
+  });
+
+  it('returns a named session that dispatched nothing as empty, not another session', () => {
+    withEnv({ OPENCODE_SESSION_ID: ROOT_C }, () => {
+      const current = adapter.currentSession();
+      assert.equal(current.sessionId, ROOT_C);
+      assert.equal(current.agents.length, 0);
+      assert.equal(current.provider, 'opencode');
+      assert.equal(current.projectPath, 'C:\\Users\\dev\\proj-c');
+      assert.equal(current.project, 'proj-a');
+    });
+  });
+
+  it('falls back to the newest session, keeping the raw id, when the named id is unknown', () => {
+    withEnv({ OPENCODE_SESSION_ID: 'ses_not_in_this_database' }, () => {
+      assert.equal(adapter.currentSessionId(), 'ses_not_in_this_database');
+      assert.equal(adapter.currentSession().sessionId, ROOT_A);
+    });
+  });
+
+  it('keeps the raw id and finds no session when there is no database', () => {
+    const empty = makeTempDir();
+    try {
+      const bare = new OpencodeAdapter(empty);
+      withEnv({ OPENCODE_SESSION_ID: ROOT_A }, () => {
+        assert.equal(bare.currentSessionId(), ROOT_A);
+        assert.equal(bare.currentSession(), null);
+      });
+    } finally {
+      removeDir(empty);
+    }
   });
 
   it('prints no ExperimentalWarning while loading and reading', () => {
