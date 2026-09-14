@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "agent-observer",
   "displayName": "Agent Observer",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "See which subagents ran in a session, with which model and for which task, read straight from Claude Code's own metadata.",
   "author": {
     "name": "Matias Beccaria",

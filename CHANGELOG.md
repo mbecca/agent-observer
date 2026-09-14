@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-13
+
 ### Added
 
 - An OpenCode plugin, shipped in the same npm package. Adding `"agent-observer"`
@@ -179,7 +181,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mbecca/agent-observer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbecca/agent-observer/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mbecca/agent-observer/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/mbecca/agent-observer/compare/v0.2.1...v0.2.2
