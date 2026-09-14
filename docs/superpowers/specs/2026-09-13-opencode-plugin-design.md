@@ -138,6 +138,31 @@ per-adapter `try/catch`:
 No adapter or product is named. Inside Claude Code the result is unchanged,
 because the Claude Code adapter already wins the first pass.
 
+**Revised after the final review (finding F1).** Two cases the above missed,
+both reproduced against real data: a nested agent (OpenCode started from
+inside Claude Code inherits `CLAUDE_CODE_SESSION_ID`, so both adapters name a
+session, and the first pass silently picks one with no sign the other
+existed), and a named adapter this installation cannot read (`--adapter auto`
+resolves only available adapters, so an unavailable one that still names a
+session — no data at this root, or no `node:sqlite` — never gets asked at
+all). Silently reporting one agent's session while another is also named is
+the same failure mode `findCurrent` already exists to avoid; it must not
+reappear just because the ambiguity comes from two adapters instead of one.
+
+`findCurrent` now asks every adapter that *could* apply for `currentSessionId()`
+— with `--adapter auto` (or none) that is every adapter, available or not, so
+an unreadable one still gets to answer the cheap "what does the environment
+name" question even though it cannot produce a session; with a specific
+`--adapter` it is only the resolved one, as before. Every id-adapter pair is
+kept in a map. The resolved (available) adapters are still tried named-first,
+exactly as in the first design, and the winning adapter's own named id decides
+`requestedId`/`exact` as before. What is new is `others`: every entry in the
+map for a different adapter whose id differs from the session actually
+reported. `cmdCurrent` and `cmdTree` print one line per `others` entry through
+`io.warn` (stderr, every format, not only text ones), naming the other
+adapter, its session id, and the session actually being reported, so a nested
+or unreadable session is visible even though it is not the one shown.
+
 ### `skills/agent-observer/SKILL.md`
 
 "Running it" keeps the `${CLAUDE_PLUGIN_ROOT}` form for Claude Code and adds

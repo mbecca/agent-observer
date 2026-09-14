@@ -239,7 +239,15 @@ describe('cli end to end', () => {
 
       const capture = captureIo();
       const code = await withEnv(
-        { CLAUDE_CONFIG_DIR: bare, CODEX_HOME: bare, XDG_DATA_HOME: bare, CLAUDE_CODE_SESSION_ID: quiet, NO_COLOR: '1' },
+        {
+          CLAUDE_CONFIG_DIR: bare,
+          CODEX_HOME: bare,
+          XDG_DATA_HOME: bare,
+          CLAUDE_CODE_SESSION_ID: quiet,
+          CLAUDE_SESSION_ID: null,
+          OPENCODE_SESSION_ID: null,
+          NO_COLOR: '1',
+        },
         () => main(['current'], capture.io),
       );
       assert.equal(await code, EXIT_OK);
@@ -261,6 +269,26 @@ describe('cli end to end', () => {
     assert.equal(await code, EXIT_OK);
     assert.match(capture.stdout, /has no recorded subagents/);
     assert.match(capture.stdout, /Showing the most recent session that does/);
+  });
+
+  it('warns on stderr when the environment also names a session in an adapter that cannot be read here', async () => {
+    // OPENCODE_SESSION_ID names a session, but the OpenCode adapter has no
+    // database to read here (empty XDG_DATA_HOME), so it is unavailable and
+    // excluded from resolveAdapters. It must still be asked directly for
+    // currentSessionId, and its answer must still produce a warning, or a
+    // real agent nested inside another disappears without a trace. This runs
+    // outside the sqlite-guarded block on purpose, so it also proves the fix
+    // on Node 18 and 20, where the OpenCode adapter is unavailable for a
+    // different reason (no node:sqlite) but must be treated the same way.
+    const capture = captureIo();
+    const code = await withEnv(
+      { ...fixtureEnv(), CLAUDE_CODE_SESSION_ID: null, OPENCODE_SESSION_ID: 'ses_unreachable_here' },
+      () => main(['current'], capture.io),
+    );
+    assert.equal(await code, EXIT_OK);
+    assert.match(capture.stdout, /Implement Task 1/);
+    assert.match(capture.stderr, /opencode/);
+    assert.match(capture.stderr, /ses_unreachable_here/);
   });
 
   it('says a session id is ignored rather than dropping it silently', async () => {
@@ -420,7 +448,7 @@ describe('current across agents', { skip: !hasNodeSqlite() && 'node:sqlite is no
       },
       () => main(['current'], capture.io),
     );
-    return { code: await code, stdout: capture.stdout };
+    return { code: await code, stdout: capture.stdout, stderr: capture.stderr };
   };
 
   it('reports the OpenCode session the environment names, not a guessed Claude Code one', async () => {
@@ -431,10 +459,15 @@ describe('current across agents', { skip: !hasNodeSqlite() && 'node:sqlite is no
     assert.doesNotMatch(stdout, /Claude Code implementation/);
   });
 
-  it('keeps reporting the Claude Code session when that is the one named', async () => {
-    const { code, stdout } = await runCurrent({ CLAUDE_CODE_SESSION_ID: CLAUDE_ID, OPENCODE_SESSION_ID: OPENCODE_ID });
+  it('keeps reporting the Claude Code session when that is the one named, but warns about the other one', async () => {
+    const { code, stdout, stderr } = await runCurrent({
+      CLAUDE_CODE_SESSION_ID: CLAUDE_ID,
+      OPENCODE_SESSION_ID: OPENCODE_ID,
+    });
     assert.equal(code, EXIT_OK);
     assert.match(stdout, /Claude Code implementation/);
+    assert.match(stderr, new RegExp(OPENCODE_ID));
+    assert.match(stderr, new RegExp(CLAUDE_ID));
   });
 
   it('warns when the named OpenCode session is unknown and it falls back', async () => {

@@ -19,9 +19,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
-- `current` could report a Claude Code session when run from inside another
-  agent, because the Claude Code adapter was asked first and guessed. Adapters
-  that know the running session are now asked before any that guess.
+- `current` and `tree` now prefer a session the environment names outright
+  over one an adapter has to guess. And when the environment names more than
+  one session — an agent nested inside another, or one whose data cannot be
+  read here — they no longer pick one silently: they say so on stderr, naming
+  the other session and how to look at it.
 
 ## [0.4.0] - 2026-09-13
 
