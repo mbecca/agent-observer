@@ -252,6 +252,8 @@ agent-observer session 3a372c2d --format html -o report.html
 agent-observer export --format html -o all-sessions.html
 ```
 
+![The HTML report open in a browser: a session id and subagent count, a lead paragraph summarising which model reviewed which share of tasks, and a timeline of eighteen subagent bars in sonnet, haiku and opus, each labelled with its task and duration.](docs/html-report.png)
+
 The report contains real task descriptions, exactly as `--format markdown` does.
 Read it before sending it to anyone.
 
