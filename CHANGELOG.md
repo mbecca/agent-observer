@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- The HTML report no longer draws models grey. A full model id such as
+  `claude-sonnet-4-5` now takes its family's colour, as the terminal already
+  did. A model outside the three coloured families, such as `big-pickle` or
+  `gpt-5.4`, borrows a colour whose family is absent from the report, so a
+  report of only non-Claude models is in colour. When there are more of them
+  than free colours, the rest are hatched, and `inherit` and `unknown` are
+  drawn as dashed outlines. Only three colours pass the contrast checks side
+  by side, so the same model can take a different colour in a different
+  report.
+
 ## [0.5.0] - 2026-09-13
 
 ### Added

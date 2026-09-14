@@ -230,12 +230,12 @@ describe('toHtml timeline edge cases', () => {
 
   it('renders an unrecorded model as unknown rather than as a colour', () => {
     const html = toHtml([session([run('Explore', null, 0, 60)])], { now: NOW });
-    assert.match(html, /class="chip"[^>]*>unknown</);
+    assert.match(html, /class="chip[^"]*"[^>]*>unknown</);
   });
 
   it('keeps inherit as the recorded value it is', () => {
     const html = toHtml([session([run('Explore', 'inherit', 0, 60)])], { now: NOW });
-    assert.match(html, /class="chip"[^>]*>inherit</);
+    assert.match(html, /class="chip[^"]*"[^>]*>inherit</);
   });
 
   it('falls back to a list when no duration is known at all', () => {
@@ -245,5 +245,111 @@ describe('toHtml timeline edge cases', () => {
     );
     assert.doesNotMatch(html, /class="track"/);
     assert.match(html, /class="fallback"/);
+  });
+});
+
+describe('toHtml model colours', () => {
+  /** The chip for one model: its classes and its inline colour, if it has one. */
+  function chip(html, model) {
+    const escaped = model.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(
+      `<div class="(chip[^"]*)"(?: style="color:(#[0-9a-f]{6})[^"]*")?>${escaped}</div>`,
+    );
+    const m = html.match(pattern);
+    assert.ok(m, `no chip rendered for ${model}`);
+    return { classes: m[1].split(' '), colour: m[2] || null };
+  }
+
+  /** The colour a bare family name gets on its own, so no test hard-codes the palette. */
+  function familyColour(family) {
+    return chip(toHtml([session([run('x', family, 0, 60)])], { now: NOW }), family).colour;
+  }
+
+  function doc(...agents) {
+    return toHtml([session(agents)], { now: NOW });
+  }
+
+  it('colours a full model id by its family, as the terminal renderer does', () => {
+    const html = doc(run('Review', 'claude-sonnet-4-5', 0, 60), run('Plan', 'claude-opus-5', 2, 60));
+    assert.equal(chip(html, 'claude-sonnet-4-5').colour, familyColour('sonnet'));
+    assert.equal(chip(html, 'claude-opus-5').colour, familyColour('opus'));
+  });
+
+  it('gives a model outside the three families a palette colour instead of grey', () => {
+    // Only big-pickle is present, so every slot is free and it takes the first.
+    const html = doc(run('Implement', 'big-pickle', 0, 60));
+    assert.equal(chip(html, 'big-pickle').colour, familyColour('haiku'));
+  });
+
+  it('leaves a family its own colour and hands the next free one to another model', () => {
+    const html = doc(run('Implement', 'haiku', 0, 60), run('Review', 'gpt-5.4', 2, 60));
+    assert.equal(chip(html, 'haiku').colour, familyColour('haiku'));
+    assert.equal(chip(html, 'gpt-5.4').colour, familyColour('sonnet'));
+  });
+
+  it('hands the free colours to the most used model first', () => {
+    // haiku and sonnet hold two slots, leaving one: gpt-5.4 has two runs, big-pickle one.
+    const html = doc(
+      run('Implement', 'haiku', 0, 60),
+      run('Review', 'sonnet', 2, 60),
+      run('Fix', 'big-pickle', 4, 60),
+      run('Test', 'gpt-5.4', 6, 60),
+      run('Explore', 'gpt-5.4', 8, 60),
+    );
+    assert.equal(chip(html, 'gpt-5.4').colour, familyColour('opus'));
+    assert.equal(chip(html, 'big-pickle').colour, null);
+  });
+
+  it('breaks a usage tie by model name, so the same data always draws the same way', () => {
+    const html = doc(
+      run('Implement', 'haiku', 0, 60),
+      run('Review', 'sonnet', 2, 60),
+      run('Fix', 'zeta', 4, 60),
+      run('Test', 'alpha', 6, 60),
+    );
+    assert.equal(chip(html, 'alpha').colour, familyColour('opus'));
+    assert.equal(chip(html, 'zeta').colour, null);
+  });
+
+  it('draws a model with no free colour hatched in ink, never grey', () => {
+    const html = doc(
+      run('Implement', 'haiku', 0, 60),
+      run('Review', 'sonnet', 2, 60),
+      run('Plan', 'opus', 4, 60),
+      run('Fix', 'big-pickle', 6, 60),
+    );
+    assert.deepEqual(chip(html, 'big-pickle'), { classes: ['chip', 'other'], colour: null });
+    assert.match(html, /class="bar other"/);
+  });
+
+  it('draws unknown and inherit as outlines, since neither names a model', () => {
+    const html = doc(run('Explore', null, 0, 60), run('Explore more', 'inherit', 2, 60));
+    assert.deepEqual(chip(html, 'unknown'), { classes: ['chip', 'none'], colour: null });
+    assert.deepEqual(chip(html, 'inherit'), { classes: ['chip', 'none'], colour: null });
+    assert.equal((html.match(/class="bar none"/g) || []).length, 2);
+  });
+
+  it('does not spend a colour on unknown or inherit', () => {
+    const html = doc(run('Explore', null, 0, 60), run('Implement', 'big-pickle', 2, 60));
+    assert.equal(chip(html, 'big-pickle').colour, familyColour('haiku'));
+  });
+
+  it('keeps one colour per model across every session in the document', () => {
+    const second = new Session({
+      provider: 'claude-code',
+      sessionId: 'second-session',
+      project: 'my-repo',
+      agents: [run('Review', 'big-pickle', 0, 60), run('Implement', 'gpt-5.4', 2, 60)],
+    });
+    const html = toHtml([session([run('Implement', 'big-pickle', 0, 60)]), second], { now: NOW });
+    const colours = [...html.matchAll(/style="color:(#[0-9a-f]{6})[^"]*">big-pickle</g)].map((m) => m[1]);
+    assert.equal(colours.length, 2);
+    assert.equal(colours[0], colours[1]);
+    assert.notEqual(chip(html, 'gpt-5.4').colour, colours[0]);
+  });
+
+  it('switches the ink of hatched and outlined models to dark when printed', () => {
+    const html = doc(run('Explore', null, 0, 60));
+    assert.match(html, /@media print\s*\{[^@]*--ink:\s*#1a1a19/);
   });
 });
