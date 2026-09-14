@@ -91,6 +91,22 @@ describe('OpenCode plugin hooks', () => {
     }
   });
 
+  it('still registers the skills path when the command file cannot be read', () => {
+    const dir = makeTempDir();
+    try {
+      // A packageRoot with no commands/ directory at all: readCommand throws
+      // trying to read a file that is not there. That must not stop the
+      // skills path from being registered, and must not throw out of
+      // OpenCode's config hook.
+      const config = {};
+      assert.doesNotThrow(() => applyConfig(config, dir));
+      assert.deepEqual(config.skills.paths, [path.join(dir, 'skills')]);
+      assert.equal(config.command[COMMAND_NAME], undefined);
+    } finally {
+      removeDir(dir);
+    }
+  });
+
   it('exports the session id to shell commands only when there is one', () => {
     const withId = { env: {} };
     applySessionEnv({ cwd: '/x', sessionID: 'ses_abc' }, withId);

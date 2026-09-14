@@ -567,6 +567,72 @@ describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available 
     }
   });
 
+  it('falls back to a real session, never a broken one, when parent_id is missing or cyclic', () => {
+    // A separate fixture, deliberately malformed: one child's parent_id names
+    // a session id that does not exist, and two sessions name each other as
+    // parent. Neither is a session this adapter can call "top-level", so
+    // resolving them must never return null while a real session dispatched
+    // something, and must never come back as one of the broken ids.
+    const brokenDir = makeTempDir();
+    try {
+      const GOOD_ROOT = 'good-root';
+      const MISSING_PARENT = 'child-of-nothing';
+      const GHOST = 'ghost-not-in-table';
+      const CYCLE_A = 'cycle-a';
+      const CYCLE_B = 'cycle-b';
+
+      buildFixtureDb(brokenDir, {
+        sessions: [
+          {
+            id: GOOD_ROOT,
+            parent_id: null,
+            directory: '/work/good',
+            agent: 'build',
+            model: { id: 'gpt-5', providerID: 'openai' },
+          },
+          { id: MISSING_PARENT, parent_id: GHOST, directory: '/work/broken' },
+          { id: CYCLE_A, parent_id: CYCLE_B },
+          { id: CYCLE_B, parent_id: CYCLE_A },
+        ],
+        messages: [{ id: 'm-good', session_id: GOOD_ROOT }],
+        parts: [
+          taskPart({
+            id: 'prt-good',
+            sessionId: GOOD_ROOT,
+            messageId: 'm-good',
+            status: 'completed',
+            start: 1_000,
+            end: 2_000,
+            description: 'Good task',
+            subagentType: 'explore',
+            modelId: 'gpt-5',
+            providerId: 'openai',
+          }),
+        ],
+      });
+
+      const broken = new OpencodeAdapter(brokenDir);
+
+      withEnv({ OPENCODE_SESSION_ID: MISSING_PARENT }, () => {
+        assert.equal(broken.currentSessionId(), MISSING_PARENT);
+        const current = broken.currentSession();
+        assert.ok(current, 'expected a fallback session, not null');
+        assert.equal(current.sessionId, GOOD_ROOT);
+      });
+
+      withEnv({ OPENCODE_SESSION_ID: CYCLE_A }, () => {
+        assert.equal(broken.currentSessionId(), CYCLE_A);
+        const current = broken.currentSession();
+        assert.ok(current, 'expected a fallback session, not null');
+        assert.equal(current.sessionId, GOOD_ROOT);
+        assert.notEqual(current.sessionId, CYCLE_A);
+        assert.notEqual(current.sessionId, CYCLE_B);
+      });
+    } finally {
+      removeDir(brokenDir);
+    }
+  });
+
   it('prints no ExperimentalWarning while loading and reading', () => {
     const adapterPath = path.join(repoRoot, 'src', 'adapters', 'opencode.js');
     const adapterUrl = pathToFileURL(adapterPath).href;

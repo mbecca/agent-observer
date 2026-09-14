@@ -48,10 +48,17 @@ export function applyConfig(config, packageRoot) {
 
   config.command = config.command || {};
   if (!config.command[COMMAND_NAME]) {
-    config.command[COMMAND_NAME] = readCommand(
-      path.join(packageRoot, 'commands', `${COMMAND_NAME}.md`),
-      packageRoot,
-    );
+    // A missing or unreadable command file must not take down the whole
+    // config hook: OpenCode would then load neither the skill nor the
+    // command, when the skill alone is perfectly usable.
+    try {
+      config.command[COMMAND_NAME] = readCommand(
+        path.join(packageRoot, 'commands', `${COMMAND_NAME}.md`),
+        packageRoot,
+      );
+    } catch {
+      // Leave the command unregistered; skills are already registered above.
+    }
   }
 }
 
