@@ -7,134 +7,18 @@ import { after, describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { OpencodeAdapter } from '../src/adapters/opencode.js';
-import { makeTempDir, removeDir } from './helpers.js';
+import {
+  hasNodeSqlite,
+  makeTempDir,
+  opencodeTaskPart as taskPart,
+  removeDir,
+  writeOpencodeFixture as buildFixtureDb,
+} from './helpers.js';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Node 18 and 20 have no node:sqlite; skip this whole file there. */
-function detectSqlite() {
-  try {
-    require('node:sqlite');
-    return true;
-  } catch {
-    return false;
-  }
-}
-const hasSqlite = detectSqlite();
-
-/**
- * Build a real opencode.db in `dir` with exactly the tables and columns the
- * design lists, inserting rows shaped like real OpenCode data.
- */
-function buildFixtureDb(dir, { projects = [], sessions = [], messages = [], parts = [] }) {
-  const { DatabaseSync } = require('node:sqlite');
-  const dbPath = path.join(dir, 'opencode.db');
-  const db = new DatabaseSync(dbPath);
-  db.exec(`
-    CREATE TABLE project (
-      id TEXT PRIMARY KEY,
-      worktree TEXT,
-      name TEXT,
-      time_created INTEGER,
-      time_updated INTEGER
-    );
-    CREATE TABLE session (
-      id TEXT PRIMARY KEY,
-      project_id TEXT,
-      parent_id TEXT,
-      directory TEXT,
-      title TEXT,
-      agent TEXT,
-      model TEXT,
-      cost REAL,
-      tokens_input INTEGER,
-      tokens_output INTEGER,
-      tokens_reasoning INTEGER,
-      tokens_cache_read INTEGER,
-      tokens_cache_write INTEGER,
-      time_created INTEGER,
-      time_updated INTEGER
-    );
-    CREATE TABLE message (
-      id TEXT PRIMARY KEY,
-      session_id TEXT,
-      time_created INTEGER,
-      time_updated INTEGER,
-      data TEXT
-    );
-    CREATE TABLE part (
-      id TEXT PRIMARY KEY,
-      message_id TEXT,
-      session_id TEXT,
-      time_created INTEGER,
-      time_updated INTEGER,
-      data TEXT
-    );
-  `);
-
-  const insertProject = db.prepare(
-    'INSERT INTO project (id, worktree, name, time_created, time_updated) VALUES (?, ?, ?, ?, ?)',
-  );
-  for (const p of projects) {
-    insertProject.run(p.id, p.worktree ?? null, p.name ?? null, p.time_created ?? null, p.time_updated ?? null);
-  }
-
-  const insertSession = db.prepare(
-    `INSERT INTO session
-      (id, project_id, parent_id, directory, title, agent, model, cost,
-       tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write,
-       time_created, time_updated)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  );
-  for (const s of sessions) {
-    insertSession.run(
-      s.id,
-      s.project_id ?? null,
-      s.parent_id ?? null,
-      s.directory ?? null,
-      s.title ?? null,
-      s.agent ?? null,
-      s.model ? JSON.stringify(s.model) : null,
-      s.cost ?? null,
-      s.tokens_input ?? null,
-      s.tokens_output ?? null,
-      s.tokens_reasoning ?? null,
-      s.tokens_cache_read ?? null,
-      s.tokens_cache_write ?? null,
-      s.time_created ?? null,
-      s.time_updated ?? null,
-    );
-  }
-
-  const insertMessage = db.prepare(
-    'INSERT INTO message (id, session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?, ?)',
-  );
-  for (const m of messages) {
-    insertMessage.run(m.id, m.session_id, m.time_created ?? null, m.time_updated ?? null, m.data ? JSON.stringify(m.data) : null);
-  }
-
-  const insertPart = db.prepare(
-    'INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?, ?, ?)',
-  );
-  for (const p of parts) {
-    const dataText = typeof p.data === 'string' ? p.data : JSON.stringify(p.data);
-    insertPart.run(p.id, p.message_id ?? null, p.session_id, p.time_created ?? null, p.time_updated ?? null, dataText);
-  }
-
-  db.close();
-  return dbPath;
-}
-
-function taskPart({ id, sessionId, messageId, status, start, end, description, subagentType, childSessionId, modelId, providerId }) {
-  const state = {
-    status,
-    time: end !== undefined ? { start, end } : { start },
-    input: { description, prompt: 'ignored prompt text', subagent_type: subagentType },
-    metadata: { sessionId: childSessionId, model: { modelID: modelId, providerID: providerId } },
-  };
-  return { id, message_id: messageId, session_id: sessionId, data: { type: 'tool', tool: 'task', state } };
-}
+const hasSqlite = hasNodeSqlite();
 
 describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available on this Node version' }, () => {
   let dir;
