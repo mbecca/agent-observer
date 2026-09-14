@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-14
+
 ### Fixed
 
 - The HTML report no longer draws models grey. A full model id such as
@@ -17,6 +19,11 @@ All notable changes to this project are documented here. The format follows
   drawn as dashed outlines. Only three colours pass the contrast checks side
   by side, so the same model can take a different colour in a different
   report.
+- The README told OpenCode users to add an unpinned `"agent-observer"`, which
+  OpenCode installs once and never updates: a restart keeps the cached copy.
+  It now pins a version and documents how to update. To get this release
+  from a pinned 0.5.0, change the entry to `agent-observer@0.5.1` and restart
+  OpenCode.
 
 ## [0.5.0] - 2026-09-13
 
@@ -193,7 +200,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/mbecca/agent-observer/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mbecca/agent-observer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbecca/agent-observer/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mbecca/agent-observer/compare/v0.2.2...v0.3.0
