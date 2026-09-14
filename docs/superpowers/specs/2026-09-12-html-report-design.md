@@ -162,8 +162,11 @@ Emitted in this fixed order. Each is a pure function returning a string or
 | Case | Behaviour |
 |---|---|
 | Subagent still running | No end time, so no proportional bar. Striped bar from its start to now, labelled as running. |
-| Model is `inherit` | A real recorded value. Grey chip reading `inherit`. |
-| Model is absent | Grey chip reading `unknown`. Never coloured as a known model. |
+| Model is `inherit` | A real recorded value, but not a model. Dashed outline chip reading `inherit`, dashed empty bar. Never takes a colour. |
+| Model is absent | Dashed outline chip reading `unknown`, dashed empty bar. Never coloured as a known model. |
+| Model id carries a family name | Matched as a substring, as the terminal does: `claude-sonnet-4-5` takes the sonnet colour. |
+| Model outside the three families | Borrows a colour whose family is absent from the document: most subagents first, then by name, in slot order haiku, sonnet, opus. One colour per model across the whole document. |
+| More such models than free colours | The rest are hatched in ink. Nothing is ever grey, because a grey model reads as a missing one. |
 | Session with no subagents | Says so. No empty timeline. |
 | No duration known for any subagent | No timeline. An ordered list instead. A chart is not invented over absent data. |
 | Long task descriptions | Truncated with an ellipsis, full text in the `title` attribute, which needs no JavaScript. |
@@ -218,8 +221,6 @@ Deferred to a follow-up:
 - A report date and a visible document title.
 - Using the validated light palette in print via CSS variables, rather than
   the fixed print colours used today.
-- Matching model colours by substring, as the terminal renderer does, instead
-  of an exact lowercase match.
 - A cap on a stale running subagent stretching the axis to now: a run with no
   end long after the session's last timestamp currently draws a bar spanning
   the whole gap.
