@@ -30,11 +30,26 @@ export class MyAgentAdapter {
   sessions() { /* -> Session[], newest first */ }
   session(id) { /* -> Session | null, accepting an id prefix */ }
   currentSession() { /* -> Session | null */ }
+  currentSessionId() { /* optional -> string | null */ }
 }
 ```
 
 Register it in `src/adapters/index.js` by adding the class to `ADAPTER_CLASSES`.
 Nothing else changes: every command, filter and output format works immediately.
+
+### `currentSessionId()` is optional
+
+Implement it only when the environment can name the running session cheaply
+and without touching the data store — reading an environment variable, not
+opening a database or walking a directory tree. Return the id exactly as the
+environment gives it, even one this adapter's own data cannot resolve: `current`
+asks every adapter that could apply for this id before deciding which session
+to report, and it prefers whichever adapter actually names one over any that
+has to guess. When more than one adapter names a session — a nested agent, or
+one whose data cannot be read here — `current` reports the session it settled
+on and warns on stderr about every other one, rather than picking silently.
+Leave the method unimplemented if the agent gives no such signal; `current`
+then falls back to this adapter's own guess, same as before.
 
 ## Capability
 

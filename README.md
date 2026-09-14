@@ -114,7 +114,10 @@ npm update -g agent-observer
 pnpm update -g agent-observer
 ```
 
-As an OpenCode plugin, pin a version or restart OpenCode to pick up a new one:
+As an OpenCode plugin, pin a version. OpenCode caches each resolved version in
+its own directory, keyed by the exact spec in `opencode.json`, so restarting
+OpenCode with the same spec keeps the version already cached; change the pin
+to fetch a new one:
 
 ```json
 {
