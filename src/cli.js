@@ -278,7 +278,17 @@ export function applyFilters(sessions, args) {
  * this tool must not have.
  */
 export function findCurrent(args) {
-  for (const adapter of resolveAdapters(args.adapter)) {
+  const adapters = resolveAdapters(args.adapter);
+  const named = adapters.filter((adapter) => {
+    try {
+      return Boolean(adapter.currentSessionId && adapter.currentSessionId());
+    } catch {
+      return false;
+    }
+  });
+  const ordered = [...named, ...adapters.filter((adapter) => !named.includes(adapter))];
+
+  for (const adapter of ordered) {
     try {
       const session = adapter.currentSession();
       if (!session) continue;
