@@ -166,6 +166,29 @@ if (marketplace) {
   }
 }
 
+// -- OpenCode plugin entrypoint --------------------------------------------
+
+// OpenCode resolves an npm plugin through exports["./server"]. A missing or
+// unpublished entry installs a package that silently loads nothing.
+const pkg = readJson('package.json');
+if (pkg) {
+  const serverEntry = pkg.exports && pkg.exports['./server'];
+  if (typeof serverEntry !== 'string') {
+    fail('package.json exports has no "./server" entry for the OpenCode plugin.');
+  } else {
+    const relative = serverEntry.replace(/^\.\//, '');
+    if (!existsSync(path.join(repoRoot, relative))) {
+      fail(`package.json exports "./server" points at missing file '${serverEntry}'.`);
+    }
+    const published = (pkg.files || []).some((entry) => {
+      const prefix = entry.replace(/^\.\//, '');
+      return prefix.endsWith('/') ? relative.startsWith(prefix) : relative === prefix;
+    });
+    if (!published) fail(`package.json files does not publish '${serverEntry}'.`);
+    notes.push(`opencode plugin ${serverEntry}`);
+  }
+}
+
 // -- report ----------------------------------------------------------------
 
 for (const note of notes) console.log(`ok   ${note}`);

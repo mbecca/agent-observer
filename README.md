@@ -55,6 +55,24 @@ No runtime dependencies. Node 18.19 or newer, on Windows, Linux or macOS.
 /plugin install agent-observer@agent-observer-marketplace
 ```
 
+**As an OpenCode plugin**, which also installs the skill and the
+`/subagent-report` command. Add it to the `plugin` list in `opencode.json`,
+globally or per project, and restart OpenCode:
+
+```json
+{
+  "plugin": ["agent-observer"]
+}
+```
+
+The plugin runs the tool with the Node on your `PATH`, which must be version 22
+or newer to read OpenCode's database. It also passes the id of the session you
+are in, so `current` reports that session rather than guessing. Tested with
+OpenCode 1.18.30.
+
+A `subagent-report` command you already defined in `opencode.json` takes
+precedence over the plugin's. Remove it to use the one the plugin ships.
+
 **As a command line tool**, from the npm registry with whichever client you use:
 
 ```bash
@@ -94,6 +112,17 @@ Installed from the registry instead:
 ```bash
 npm update -g agent-observer
 pnpm update -g agent-observer
+```
+
+As an OpenCode plugin, pin a version. OpenCode caches each resolved version in
+its own directory, keyed by the exact spec in `opencode.json`, so restarting
+OpenCode with the same spec keeps the version already cached; change the pin
+to fetch a new one:
+
+```json
+{
+  "plugin": ["agent-observer@0.5.0"]
+}
 ```
 
 ## Use
@@ -237,7 +266,7 @@ one shared model.
 |---|---|
 | `claude-code` | Full support: model, type, task, depth, timing, turns. |
 | `codex` | Session model only. Codex rollouts record no per-subagent metadata, and the adapter says so rather than guessing. |
-| `opencode` | Full support, read from OpenCode's SQLite database: model, type, task, depth, timing, turns, tokens and cost. Needs a Node that ships `node:sqlite` (Node 22 or newer). |
+| `opencode` | Full support, read from OpenCode's SQLite database: model, type, task, depth, timing, turns, tokens and cost. Needs a Node that ships `node:sqlite` (Node 22 or newer). Installed as an OpenCode plugin, it reads the session you are in. |
 | `generic` | Reads the [common event format](docs/event-format.md) from any agent. |
 
 To make any other agent observable, emit one JSON object per line and point the

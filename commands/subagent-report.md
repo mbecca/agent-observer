@@ -19,8 +19,8 @@ whatever the user typed is usually already correct. The tool's commands are
 Three cases need translating first:
 
 - **Nothing given** becomes `current`.
-- **Something that looks like a session id**, a UUID or a hex prefix on its own,
-  becomes `session <that id>`.
+- **Something that looks like a session id** on its own, a UUID, a hex prefix,
+  or an id such as `ses_…`, becomes `session <that id>`.
 - **An older flag form**, from before these arguments matched the tool's own:
   `--current` is `current`, `--tree` is `tree`, `--models` is `models`,
   `--all` is `sessions`, `--timeline` is `timeline`, and `--json` is

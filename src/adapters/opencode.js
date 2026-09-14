@@ -28,6 +28,12 @@ export const PROVIDER = 'opencode';
 
 const DB_FILE = 'opencode.db';
 
+/**
+ * OpenCode sets no session variable itself. agent-observer's OpenCode plugin
+ * exports this one to shell commands from the session they run in.
+ */
+export const SESSION_ENV_VAR = 'OPENCODE_SESSION_ID';
+
 /** Node emits this once per process the first time node:sqlite is touched. */
 const EXPERIMENTAL_WARNING_RE = /SQLite is an experimental feature/i;
 
@@ -205,11 +211,37 @@ export class OpencodeAdapter {
   }
 
   /**
-   * OpenCode sets no session-id environment variable, so this can only guess:
-   * the newest session whose directory matches cwd, else the newest session.
+   * The top-level session the environment names, if any.
+   *
+   * A shell command run by a subagent carries the subagent's own session id,
+   * so a known id is resolved to its top-level session. An id the database
+   * does not know is returned as given, so the caller can tell the user it
+   * had to fall back.
+   */
+  currentSessionId() {
+    const raw = (process.env[SESSION_ENV_VAR] || '').trim();
+    if (!raw) return null;
+    const top = this.#topLevelSession(raw);
+    return top ? top.sessionId : raw;
+  }
+
+  /**
+   * The session named by the environment, else the newest one under cwd, else
+   * the newest one.
+   *
+   * A named session that dispatched nothing comes back empty: "this session
+   * used no subagents" is the true answer, and another session's subagents
+   * would not be.
    */
   currentSession() {
+    const raw = (process.env[SESSION_ENV_VAR] || '').trim();
     const all = this.sessions();
+
+    if (raw) {
+      const top = this.#topLevelSession(raw);
+      if (top) return all.find((s) => s.sessionId === top.sessionId) || top;
+    }
+
     if (!all.length) return null;
 
     const cwd = path.resolve(process.cwd()).toLowerCase();
@@ -217,6 +249,48 @@ export class OpencodeAdapter {
       (s) => s.projectPath && path.resolve(s.projectPath).toLowerCase() === cwd,
     );
     return local || all[0];
+  }
+
+  /**
+   * Follow `parent_id` up from `sessionId` to its top-level session, returned
+   * as a Session with no agents. Null when the id, or any ancestor, is not in
+   * the database, when the chain loops, or when the database cannot be read.
+   */
+  #topLevelSession(sessionId) {
+    const { db, problem } = this.#open();
+    if (problem) return null;
+
+    try {
+      if (!schemaRecognised(db)) return null;
+      const byId = db.prepare('SELECT * FROM session WHERE id = ?');
+      const seen = new Set();
+      let row = byId.get(sessionId);
+      while (row && row.parent_id && !seen.has(row.id)) {
+        seen.add(row.id);
+        row = byId.get(row.parent_id);
+      }
+      if (!row || row.parent_id) return null;
+
+      const project = row.project_id
+        ? db.prepare('SELECT * FROM project WHERE id = ?').get(row.project_id)
+        : null;
+      const projectPath = row.directory || (project && project.worktree) || null;
+
+      return new Session({
+        provider: PROVIDER,
+        sessionId: row.id,
+        project: (project && project.name) || (projectPath ? baseName(projectPath) : null),
+        projectPath,
+        startedAt: asDate(row.time_created),
+        updatedAt: asDate(row.time_updated),
+        agents: [],
+        sourcePath: this.dbPath,
+      });
+    } catch {
+      return null;
+    } finally {
+      db.close();
+    }
   }
 }
 

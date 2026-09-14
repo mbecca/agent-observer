@@ -7,134 +7,19 @@ import { after, describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { OpencodeAdapter } from '../src/adapters/opencode.js';
-import { makeTempDir, removeDir } from './helpers.js';
+import {
+  hasNodeSqlite,
+  makeTempDir,
+  opencodeTaskPart as taskPart,
+  removeDir,
+  withEnv,
+  writeOpencodeFixture as buildFixtureDb,
+} from './helpers.js';
 
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Node 18 and 20 have no node:sqlite; skip this whole file there. */
-function detectSqlite() {
-  try {
-    require('node:sqlite');
-    return true;
-  } catch {
-    return false;
-  }
-}
-const hasSqlite = detectSqlite();
-
-/**
- * Build a real opencode.db in `dir` with exactly the tables and columns the
- * design lists, inserting rows shaped like real OpenCode data.
- */
-function buildFixtureDb(dir, { projects = [], sessions = [], messages = [], parts = [] }) {
-  const { DatabaseSync } = require('node:sqlite');
-  const dbPath = path.join(dir, 'opencode.db');
-  const db = new DatabaseSync(dbPath);
-  db.exec(`
-    CREATE TABLE project (
-      id TEXT PRIMARY KEY,
-      worktree TEXT,
-      name TEXT,
-      time_created INTEGER,
-      time_updated INTEGER
-    );
-    CREATE TABLE session (
-      id TEXT PRIMARY KEY,
-      project_id TEXT,
-      parent_id TEXT,
-      directory TEXT,
-      title TEXT,
-      agent TEXT,
-      model TEXT,
-      cost REAL,
-      tokens_input INTEGER,
-      tokens_output INTEGER,
-      tokens_reasoning INTEGER,
-      tokens_cache_read INTEGER,
-      tokens_cache_write INTEGER,
-      time_created INTEGER,
-      time_updated INTEGER
-    );
-    CREATE TABLE message (
-      id TEXT PRIMARY KEY,
-      session_id TEXT,
-      time_created INTEGER,
-      time_updated INTEGER,
-      data TEXT
-    );
-    CREATE TABLE part (
-      id TEXT PRIMARY KEY,
-      message_id TEXT,
-      session_id TEXT,
-      time_created INTEGER,
-      time_updated INTEGER,
-      data TEXT
-    );
-  `);
-
-  const insertProject = db.prepare(
-    'INSERT INTO project (id, worktree, name, time_created, time_updated) VALUES (?, ?, ?, ?, ?)',
-  );
-  for (const p of projects) {
-    insertProject.run(p.id, p.worktree ?? null, p.name ?? null, p.time_created ?? null, p.time_updated ?? null);
-  }
-
-  const insertSession = db.prepare(
-    `INSERT INTO session
-      (id, project_id, parent_id, directory, title, agent, model, cost,
-       tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write,
-       time_created, time_updated)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  );
-  for (const s of sessions) {
-    insertSession.run(
-      s.id,
-      s.project_id ?? null,
-      s.parent_id ?? null,
-      s.directory ?? null,
-      s.title ?? null,
-      s.agent ?? null,
-      s.model ? JSON.stringify(s.model) : null,
-      s.cost ?? null,
-      s.tokens_input ?? null,
-      s.tokens_output ?? null,
-      s.tokens_reasoning ?? null,
-      s.tokens_cache_read ?? null,
-      s.tokens_cache_write ?? null,
-      s.time_created ?? null,
-      s.time_updated ?? null,
-    );
-  }
-
-  const insertMessage = db.prepare(
-    'INSERT INTO message (id, session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?, ?)',
-  );
-  for (const m of messages) {
-    insertMessage.run(m.id, m.session_id, m.time_created ?? null, m.time_updated ?? null, m.data ? JSON.stringify(m.data) : null);
-  }
-
-  const insertPart = db.prepare(
-    'INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?, ?, ?)',
-  );
-  for (const p of parts) {
-    const dataText = typeof p.data === 'string' ? p.data : JSON.stringify(p.data);
-    insertPart.run(p.id, p.message_id ?? null, p.session_id, p.time_created ?? null, p.time_updated ?? null, dataText);
-  }
-
-  db.close();
-  return dbPath;
-}
-
-function taskPart({ id, sessionId, messageId, status, start, end, description, subagentType, childSessionId, modelId, providerId }) {
-  const state = {
-    status,
-    time: end !== undefined ? { start, end } : { start },
-    input: { description, prompt: 'ignored prompt text', subagent_type: subagentType },
-    metadata: { sessionId: childSessionId, model: { modelID: modelId, providerID: providerId } },
-  };
-  return { id, message_id: messageId, session_id: sessionId, data: { type: 'tool', tool: 'task', state } };
-}
+const hasSqlite = hasNodeSqlite();
 
 describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available on this Node version' }, () => {
   let dir;
@@ -619,8 +504,133 @@ describe('OpencodeAdapter', { skip: !hasSqlite && 'node:sqlite is not available 
   });
 
   it('falls back to the newest session when cwd matches none of them', () => {
-    const current = adapter.currentSession();
-    assert.equal(current.sessionId, ROOT_A);
+    withEnv({ OPENCODE_SESSION_ID: null }, () => {
+      const current = adapter.currentSession();
+      assert.equal(current.sessionId, ROOT_A);
+    });
+  });
+
+  it('has no current session id when the environment names none', () => {
+    withEnv({ OPENCODE_SESSION_ID: null }, () => {
+      assert.equal(adapter.currentSessionId(), null);
+    });
+    withEnv({ OPENCODE_SESSION_ID: '   ' }, () => {
+      assert.equal(adapter.currentSessionId(), null);
+    });
+  });
+
+  it('prefers the session the environment names over a newer one', () => {
+    withEnv({ OPENCODE_SESSION_ID: ` ${ROOT_B} ` }, () => {
+      assert.equal(adapter.currentSessionId(), ROOT_B);
+      assert.equal(adapter.currentSession().sessionId, ROOT_B);
+    });
+  });
+
+  it('resolves a subagent session id to its top-level session', () => {
+    withEnv({ OPENCODE_SESSION_ID: CHILD_B1 }, () => {
+      assert.equal(adapter.currentSessionId(), ROOT_B);
+      assert.equal(adapter.currentSession().sessionId, ROOT_B);
+    });
+    withEnv({ OPENCODE_SESSION_ID: CHILD_A2_1 }, () => {
+      assert.equal(adapter.currentSession().sessionId, ROOT_A);
+    });
+  });
+
+  it('returns a named session that dispatched nothing as empty, not another session', () => {
+    withEnv({ OPENCODE_SESSION_ID: ROOT_C }, () => {
+      const current = adapter.currentSession();
+      assert.equal(current.sessionId, ROOT_C);
+      assert.equal(current.agents.length, 0);
+      assert.equal(current.provider, 'opencode');
+      assert.equal(current.projectPath, 'C:\\Users\\dev\\proj-c');
+      assert.equal(current.project, 'proj-a');
+    });
+  });
+
+  it('falls back to the newest session, keeping the raw id, when the named id is unknown', () => {
+    withEnv({ OPENCODE_SESSION_ID: 'ses_not_in_this_database' }, () => {
+      assert.equal(adapter.currentSessionId(), 'ses_not_in_this_database');
+      assert.equal(adapter.currentSession().sessionId, ROOT_A);
+    });
+  });
+
+  it('keeps the raw id and finds no session when there is no database', () => {
+    const empty = makeTempDir();
+    try {
+      const bare = new OpencodeAdapter(empty);
+      withEnv({ OPENCODE_SESSION_ID: ROOT_A }, () => {
+        assert.equal(bare.currentSessionId(), ROOT_A);
+        assert.equal(bare.currentSession(), null);
+      });
+    } finally {
+      removeDir(empty);
+    }
+  });
+
+  it('falls back to a real session, never a broken one, when parent_id is missing or cyclic', () => {
+    // A separate fixture, deliberately malformed: one child's parent_id names
+    // a session id that does not exist, and two sessions name each other as
+    // parent. Neither is a session this adapter can call "top-level", so
+    // resolving them must never return null while a real session dispatched
+    // something, and must never come back as one of the broken ids.
+    const brokenDir = makeTempDir();
+    try {
+      const GOOD_ROOT = 'good-root';
+      const MISSING_PARENT = 'child-of-nothing';
+      const GHOST = 'ghost-not-in-table';
+      const CYCLE_A = 'cycle-a';
+      const CYCLE_B = 'cycle-b';
+
+      buildFixtureDb(brokenDir, {
+        sessions: [
+          {
+            id: GOOD_ROOT,
+            parent_id: null,
+            directory: '/work/good',
+            agent: 'build',
+            model: { id: 'gpt-5', providerID: 'openai' },
+          },
+          { id: MISSING_PARENT, parent_id: GHOST, directory: '/work/broken' },
+          { id: CYCLE_A, parent_id: CYCLE_B },
+          { id: CYCLE_B, parent_id: CYCLE_A },
+        ],
+        messages: [{ id: 'm-good', session_id: GOOD_ROOT }],
+        parts: [
+          taskPart({
+            id: 'prt-good',
+            sessionId: GOOD_ROOT,
+            messageId: 'm-good',
+            status: 'completed',
+            start: 1_000,
+            end: 2_000,
+            description: 'Good task',
+            subagentType: 'explore',
+            modelId: 'gpt-5',
+            providerId: 'openai',
+          }),
+        ],
+      });
+
+      const broken = new OpencodeAdapter(brokenDir);
+
+      withEnv({ OPENCODE_SESSION_ID: MISSING_PARENT }, () => {
+        assert.equal(broken.currentSessionId(), MISSING_PARENT);
+        const current = broken.currentSession();
+        assert.ok(current, 'expected a fallback session, not null');
+        assert.equal(current.sessionId, GOOD_ROOT);
+      });
+
+      withEnv({ OPENCODE_SESSION_ID: CYCLE_A }, () => {
+        assert.equal(broken.currentSessionId(), CYCLE_A);
+        const current = broken.currentSession();
+        assert.ok(current, 'expected a fallback session, not null');
+        assert.equal(current.sessionId, GOOD_ROOT);
+        assert.notEqual(current.sessionId, CYCLE_A);
+        assert.notEqual(current.sessionId, CYCLE_B);
+      });
+    } finally {
+      removeDir(brokenDir);
+    }
   });
 
   it('prints no ExperimentalWarning while loading and reading', () => {

@@ -1,9 +1,10 @@
 {
   "name": "agent-observer",
   "version": "0.4.0",
-  "description": "See which subagents your coding agent ran, with which model, for which task. Works with Claude Code out of the box.",
+  "description": "See which subagents your coding agent ran, with which model, for which task. Works with Claude Code and OpenCode out of the box.",
   "keywords": [
     "claude-code",
+    "opencode",
     "claude",
     "subagents",
     "agent",
@@ -26,13 +27,15 @@
     ".": "./src/index.js",
     "./core/model": "./src/core/model.js",
     "./core/report": "./src/core/report.js",
-    "./adapters": "./src/adapters/index.js"
+    "./adapters": "./src/adapters/index.js",
+    "./server": "./opencode/plugin.js"
   },
   "files": [
     "bin/",
     "src/",
     "skills/",
     "commands/",
+    "opencode/",
     ".claude-plugin/",
     "docs/",
     "README.md",

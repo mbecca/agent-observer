@@ -276,14 +276,46 @@ export function applyFilters(sessions, args) {
  * can tell the user when it had to fall back to a different one. Silently
  * reporting another session's subagents as "current" is the one failure mode
  * this tool must not have.
+ *
+ * Two agents can both name a session in the same environment: one nested
+ * inside another (each sets its own session variable), or one adapter naming
+ * a session that cannot be read here (a different Node version, or no data at
+ * this root). Either way, guessing which one is "really" current would mean
+ * naming a product in code that must stay product-agnostic, so instead every
+ * adapter that could apply is asked for `currentSessionId()` -- not only the
+ * resolved, available ones -- and every other named session that differs from
+ * the one reported comes back in `others`, for the caller to warn about.
  */
 export function findCurrent(args) {
-  for (const adapter of resolveAdapters(args.adapter)) {
+  const adapters = resolveAdapters(args.adapter);
+  const askable = !args.adapter || args.adapter === 'auto' ? allAdapters() : adapters;
+
+  const named = new Map();
+  for (const adapter of askable) {
+    try {
+      const id = adapter.currentSessionId ? adapter.currentSessionId() : null;
+      if (id) named.set(adapter.name, id);
+    } catch {
+      // This adapter cannot say right now; leave it unnamed.
+    }
+  }
+
+  const ordered = [
+    ...adapters.filter((adapter) => named.has(adapter.name)),
+    ...adapters.filter((adapter) => !named.has(adapter.name)),
+  ];
+
+  for (const adapter of ordered) {
     try {
       const session = adapter.currentSession();
       if (!session) continue;
-      const requestedId = adapter.currentSessionId ? adapter.currentSessionId() : null;
-      return { session, requestedId, exact: !requestedId || requestedId === session.sessionId };
+      const requestedId = named.get(adapter.name) || null;
+      const exact = !requestedId || requestedId === session.sessionId;
+      const others = [];
+      for (const [name, id] of named) {
+        if (name !== adapter.name && id !== session.sessionId) others.push({ adapter: name, sessionId: id });
+      }
+      return { session, requestedId, exact, others };
     } catch {
       // Try the next adapter.
     }
@@ -371,6 +403,23 @@ function renderOneSession(session, args, write) {
   return EXIT_OK;
 }
 
+/**
+ * Warn about every other session the environment names, on stderr, for every
+ * format. A nested agent, or a named session in an adapter that cannot be
+ * read here, must never disappear silently just because the report itself
+ * looks fine.
+ */
+function warnOthers(found, io) {
+  for (const other of found.others) {
+    io.warn(
+      `The environment also names ${other.adapter} session ${other.sessionId}; this report is for ` +
+        `${found.session.provider} session ${found.session.sessionId}. ` +
+        `Run 'agent-observer session ${other.sessionId}' for that one, ` +
+        "or 'agent-observer doctor' if it shows no data.",
+    );
+  }
+}
+
 function cmdCurrent(args, io) {
   // `current` is by definition the session you are in, so an id cannot apply.
   // Say so: swallowing the argument looks like it was honoured.
@@ -384,6 +433,7 @@ function cmdCurrent(args, io) {
 
   const found = findCurrent(args);
   if (!found) return noData(args, io.write);
+  warnOthers(found, io);
 
   if (!found.exact && !isDataFormat(args.format)) {
     const p = painterFor(args);
@@ -437,6 +487,7 @@ function cmdTree(args, io) {
   } else {
     const found = findCurrent(args);
     if (!found) return noData(args, io.write);
+    warnOthers(found, io);
     if (!found.exact && !isDataFormat(args.format)) {
       io.write(
         painterFor(args).paint(

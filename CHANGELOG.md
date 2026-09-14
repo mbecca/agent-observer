@@ -6,6 +6,25 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An OpenCode plugin, shipped in the same npm package. Adding `"agent-observer"`
+  to the `plugin` list in `opencode.json` installs the `agent-observer` skill
+  and the `/subagent-report` command, both running the bundled tool with Node,
+  with no global install. A `subagent-report` command already defined in
+  `opencode.json` is left in place and takes precedence.
+- The OpenCode adapter reads the session it runs in from `OPENCODE_SESSION_ID`,
+  which the plugin sets, resolving a subagent's session to its top-level
+  session.
+
+### Fixed
+
+- `current` and `tree` now prefer a session the environment names outright
+  over one an adapter has to guess. And when the environment names more than
+  one session — an agent nested inside another, or one whose data cannot be
+  read here — they no longer pick one silently: they say so on stderr, naming
+  the other session and how to look at it.
+
 ## [0.4.0] - 2026-09-13
 
 ### Added

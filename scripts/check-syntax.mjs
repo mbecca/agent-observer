@@ -31,7 +31,7 @@ function collect(dir) {
   return found;
 }
 
-const files = ['bin', 'src', 'scripts', 'test'].flatMap((dir) =>
+const files = ['bin', 'src', 'scripts', 'test', 'opencode'].flatMap((dir) =>
   collect(path.join(repoRoot, dir)),
 );
 

@@ -5,7 +5,7 @@ import { after, before, describe, it } from 'node:test';
 
 import { EXIT_ERROR, EXIT_NO_DATA, EXIT_OK, applyFilters, main, parseArgs } from '../src/cli.js';
 import { AgentRun, Session } from '../src/core/model.js';
-import { captureIo, makeTempDir, removeDir, withEnv, writeClaudeFixture } from './helpers.js';
+import { captureIo, hasNodeSqlite, makeTempDir, opencodeTaskPart, removeDir, withEnv, writeClaudeFixture, writeOpencodeFixture } from './helpers.js';
 
 describe('parseArgs', () => {
   it('reads the command and its positional argument', () => {
@@ -149,6 +149,7 @@ describe('cli end to end', () => {
     CODEX_HOME: root, // no sessions/ dir here, so the Codex adapter stays quiet
     XDG_DATA_HOME: root, // no opencode/ dir here, so the OpenCode adapter stays quiet
     AGENT_OBSERVER_EVENTS: null,
+    OPENCODE_SESSION_ID: null,
     NO_COLOR: '1',
   });
 
@@ -238,7 +239,15 @@ describe('cli end to end', () => {
 
       const capture = captureIo();
       const code = await withEnv(
-        { CLAUDE_CONFIG_DIR: bare, CODEX_HOME: bare, XDG_DATA_HOME: bare, CLAUDE_CODE_SESSION_ID: quiet, NO_COLOR: '1' },
+        {
+          CLAUDE_CONFIG_DIR: bare,
+          CODEX_HOME: bare,
+          XDG_DATA_HOME: bare,
+          CLAUDE_CODE_SESSION_ID: quiet,
+          CLAUDE_SESSION_ID: null,
+          OPENCODE_SESSION_ID: null,
+          NO_COLOR: '1',
+        },
         () => main(['current'], capture.io),
       );
       assert.equal(await code, EXIT_OK);
@@ -260,6 +269,26 @@ describe('cli end to end', () => {
     assert.equal(await code, EXIT_OK);
     assert.match(capture.stdout, /has no recorded subagents/);
     assert.match(capture.stdout, /Showing the most recent session that does/);
+  });
+
+  it('warns on stderr when the environment also names a session in an adapter that cannot be read here', async () => {
+    // OPENCODE_SESSION_ID names a session, but the OpenCode adapter has no
+    // database to read here (empty XDG_DATA_HOME), so it is unavailable and
+    // excluded from resolveAdapters. It must still be asked directly for
+    // currentSessionId, and its answer must still produce a warning, or a
+    // real agent nested inside another disappears without a trace. This runs
+    // outside the sqlite-guarded block on purpose, so it also proves the fix
+    // on Node 18 and 20, where the OpenCode adapter is unavailable for a
+    // different reason (no node:sqlite) but must be treated the same way.
+    const capture = captureIo();
+    const code = await withEnv(
+      { ...fixtureEnv(), CLAUDE_CODE_SESSION_ID: null, OPENCODE_SESSION_ID: 'ses_unreachable_here' },
+      () => main(['current'], capture.io),
+    );
+    assert.equal(await code, EXIT_OK);
+    assert.match(capture.stdout, /Implement Task 1/);
+    assert.match(capture.stderr, /opencode/);
+    assert.match(capture.stderr, /ses_unreachable_here/);
   });
 
   it('says a session id is ignored rather than dropping it silently', async () => {
@@ -373,5 +402,77 @@ describe('cli end to end', () => {
   it('offers html in the format list', async () => {
     const { stdout } = await runCli([]);
     assert.match(stdout, /html/);
+  });
+});
+
+describe('current across agents', { skip: !hasNodeSqlite() && 'node:sqlite is not available on this Node version' }, () => {
+  const CLAUDE_ID = 'dddddddd-1111-2222-3333-444444444444';
+  const OPENCODE_ID = 'ses_opencode_root';
+  let root;
+
+  before(() => {
+    root = makeTempDir();
+    writeClaudeFixture(root, {
+      [CLAUDE_ID]: {
+        project: 'C--work-demo',
+        cwd: '/work/demo',
+        agents: [{ id: 'agent-1', model: 'haiku', description: 'Claude Code implementation', startedAt: '2026-08-14T13:34:55.000Z', finishedAt: '2026-08-14T13:36:23.000Z' }],
+      },
+    });
+    writeOpencodeFixture(path.join(root, 'opencode'), {
+      sessions: [
+        { id: OPENCODE_ID, parent_id: null, directory: '/work/other', agent: 'build', model: { id: 'gpt-5', providerID: 'openai' }, time_created: 1_000_000_000_000, time_updated: 1_000_000_100_000 },
+        { id: 'ses_opencode_child', parent_id: OPENCODE_ID, agent: 'explore', model: { id: 'gpt-5', providerID: 'openai' } },
+      ],
+      parts: [
+        opencodeTaskPart({ id: 'prt-1', sessionId: OPENCODE_ID, messageId: 'msg-1', status: 'completed', start: 1_000_000_010_000, end: 1_000_000_060_000, description: 'OpenCode exploration', subagentType: 'explore', childSessionId: 'ses_opencode_child', modelId: 'gpt-5', providerId: 'openai' }),
+      ],
+    });
+  });
+
+  after(() => removeDir(root));
+
+  const runCurrent = async (vars) => {
+    const capture = captureIo();
+    const code = await withEnv(
+      {
+        CLAUDE_CONFIG_DIR: root,
+        CODEX_HOME: root,
+        XDG_DATA_HOME: root,
+        AGENT_OBSERVER_EVENTS: null,
+        CLAUDE_CODE_SESSION_ID: null,
+        CLAUDE_SESSION_ID: null,
+        OPENCODE_SESSION_ID: null,
+        NO_COLOR: '1',
+        ...vars,
+      },
+      () => main(['current'], capture.io),
+    );
+    return { code: await code, stdout: capture.stdout, stderr: capture.stderr };
+  };
+
+  it('reports the OpenCode session the environment names, not a guessed Claude Code one', async () => {
+    const { code, stdout } = await runCurrent({ OPENCODE_SESSION_ID: OPENCODE_ID });
+    assert.equal(code, EXIT_OK);
+    assert.match(stdout, new RegExp(OPENCODE_ID));
+    assert.match(stdout, /OpenCode exploration/);
+    assert.doesNotMatch(stdout, /Claude Code implementation/);
+  });
+
+  it('keeps reporting the Claude Code session when that is the one named, but warns about the other one', async () => {
+    const { code, stdout, stderr } = await runCurrent({
+      CLAUDE_CODE_SESSION_ID: CLAUDE_ID,
+      OPENCODE_SESSION_ID: OPENCODE_ID,
+    });
+    assert.equal(code, EXIT_OK);
+    assert.match(stdout, /Claude Code implementation/);
+    assert.match(stderr, new RegExp(OPENCODE_ID));
+    assert.match(stderr, new RegExp(CLAUDE_ID));
+  });
+
+  it('warns when the named OpenCode session is unknown and it falls back', async () => {
+    const { code, stdout } = await runCurrent({ OPENCODE_SESSION_ID: 'ses_unknown' });
+    assert.equal(code, EXIT_OK);
+    assert.match(stdout, /has no recorded subagents/);
   });
 });
