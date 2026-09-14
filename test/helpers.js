@@ -139,6 +139,7 @@ export function hasNodeSqlite() {
  * OpenCode adapter reads, inserting rows shaped like real OpenCode data.
  */
 export function writeOpencodeFixture(dir, { projects = [], sessions = [], messages = [], parts = [] }) {
+  fs.mkdirSync(dir, { recursive: true });
   const { DatabaseSync } = require('node:sqlite');
   const dbPath = path.join(dir, 'opencode.db');
   const db = new DatabaseSync(dbPath);
