@@ -27,6 +27,16 @@ If the user installed it globally with `npm install -g agent-observer`, the
 shorter `agent-observer <command>` works too. The same commands work on Windows,
 Linux and macOS; no shell-specific syntax is needed.
 
+Outside Claude Code, as in OpenCode, `${CLAUDE_PLUGIN_ROOT}` is not set. The
+tool is then `bin/agent-observer.js` two directories above this skill's own
+directory, which OpenCode shows as "Base directory for this skill" when it loads
+the skill. Run it with Node, version 22 or newer for OpenCode data, quoting the
+path and using forward slashes:
+
+```bash
+node "<skill directory>/../../bin/agent-observer.js" <command>
+```
+
 ## Choosing a command
 
 | The user asks | Run |

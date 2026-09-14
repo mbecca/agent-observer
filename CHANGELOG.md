@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An OpenCode plugin, shipped in the same npm package. Adding `"agent-observer"`
+  to the `plugin` list in `opencode.json` installs the `agent-observer` skill
+  and the `/subagent-report` command, both running the bundled tool with Node,
+  with no global install. A `subagent-report` command already defined in
+  `opencode.json` is left in place and takes precedence.
+- The OpenCode adapter reads the session it runs in from `OPENCODE_SESSION_ID`,
+  which the plugin sets, resolving a subagent's session to its top-level
+  session.
+
+### Fixed
+
+- `current` could report a Claude Code session when run from inside another
+  agent, because the Claude Code adapter was asked first and guessed. Adapters
+  that know the running session are now asked before any that guess.
+
 ## [0.4.0] - 2026-09-13
 
 ### Added
