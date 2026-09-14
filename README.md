@@ -57,13 +57,25 @@ No runtime dependencies. Node 18.19 or newer, on Windows, Linux or macOS.
 
 **As an OpenCode plugin**, which also installs the skill and the
 `/subagent-report` command. Add it to the `plugin` list in `opencode.json`,
-globally or per project, and restart OpenCode:
+globally or per project, with a version, and restart OpenCode:
 
 ```json
 {
-  "plugin": ["agent-observer"]
+  "plugin": ["agent-observer@<version>"]
 }
 ```
+
+`npm view agent-observer version` prints the latest. OpenCode can also write
+the entry for you:
+
+```bash
+opencode plugin agent-observer@<version> --global
+```
+
+Without `--global` it goes into the project's `.opencode/opencode.json`.
+
+Pin the version. An entry without one installs the latest release once and
+never checks again, so it never updates. See [Updating](#updating).
 
 The plugin runs the tool with the Node on your `PATH`, which must be version 22
 or newer to read OpenCode's database. It also passes the id of the session you
@@ -90,6 +102,8 @@ node bin/agent-observer.js current
 
 ### Updating
 
+#### Claude Code plugin
+
 The plugin does not update itself. Both steps are needed:
 
 ```
@@ -107,22 +121,54 @@ what is actually loaded rather than what was published:
 node "${CLAUDE_PLUGIN_ROOT}/bin/agent-observer.js" --version
 ```
 
-Installed from the registry instead:
+#### OpenCode plugin
+
+OpenCode installs each plugin entry once, into a cache directory named after
+the exact entry in `opencode.json`, and never looks for a newer release in that
+directory again. Restarting OpenCode, or running `opencode plugin` again with
+the same entry, keeps the version already cached. To update, point the entry at
+the new version, which gives it a new directory to install into. Checked
+against OpenCode 1.18.30.
+
+1. Find the latest version:
+
+   ```bash
+   npm view agent-observer version
+   ```
+
+2. Change the version in `opencode.json`, by hand or with:
+
+   ```bash
+   opencode plugin agent-observer@<version> --global --force
+   ```
+
+   `--force` replaces the entry already there. Leave out `--global` to update
+   a project's `.opencode/opencode.json` instead.
+
+3. Restart OpenCode. It installs the new version as it loads.
+
+4. Check which version is loaded. `opencode debug paths` prints the cache
+   directory, and the plugin sits inside it:
+
+   ```bash
+   node "<cache>/packages/agent-observer@<version>/node_modules/agent-observer/bin/agent-observer.js" --version
+   ```
+
+An entry without a version, `"agent-observer"`, is cached as
+`agent-observer@latest` and stays on the release it first installed. To update
+it, delete `<cache>/packages/agent-observer@latest` and restart OpenCode, or
+pin a version as above.
+
+Every update leaves the previous version's directory in the cache. Once no
+entry in `opencode.json` refers to it, it is safe to delete.
+
+#### Command line tool
+
+Installed from the registry:
 
 ```bash
 npm update -g agent-observer
 pnpm update -g agent-observer
-```
-
-As an OpenCode plugin, pin a version. OpenCode caches each resolved version in
-its own directory, keyed by the exact spec in `opencode.json`, so restarting
-OpenCode with the same spec keeps the version already cached; change the pin
-to fetch a new one:
-
-```json
-{
-  "plugin": ["agent-observer@0.5.0"]
-}
 ```
 
 ## Use
