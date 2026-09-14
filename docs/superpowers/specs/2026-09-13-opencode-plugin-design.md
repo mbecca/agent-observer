@@ -89,6 +89,12 @@ returns two hooks.
 - If `config.command['subagent-report']` already exists, leaves it alone. User
   configuration wins.
 
+The hook logic lives in a sibling `opencode/hooks.js`, which the tests import.
+`plugin.js` exports nothing but its default: when a module's default is not a
+V1 plugin, OpenCode calls every export as a legacy plugin and throws on any
+that is not a function. `hooks.js` must not import the adapters, so the plugin
+never loads `node:sqlite` inside Bun.
+
 The package root is written with forward slashes (`C:/Users/…`), which Node
 accepts on Windows and which survive bash, PowerShell and cmd quoting alike. The
 conversion is a string replacement, not `path.posix`, so a Windows path is
