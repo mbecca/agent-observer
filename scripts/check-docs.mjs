@@ -18,7 +18,7 @@ const checked = [];
 
 /** Files that must exist, because something else depends on them. */
 const REQUIRED = [
-  ['CLAUDE.md', 'Claude Code loads this automatically; it carries the project rules.'],
+  ['.claude/CLAUDE.md', 'Claude Code loads this automatically; it carries the project rules.'],
   ['AGENTS.md', 'The same rules for agents without Superpowers.'],
   ['CONTRIBUTING.md', 'The human entry point.'],
   ['docs/event-format.md', 'The interop contract other tools build against.'],
@@ -82,8 +82,8 @@ for (const file of markdownFiles(repoRoot)) {
  * CLAUDE.md must keep naming the Superpowers skills, because that is the
  * mechanism by which a contributing agent is told to use them.
  */
-const claudeMd = existsSync(path.join(repoRoot, 'CLAUDE.md'))
-  ? readFileSync(path.join(repoRoot, 'CLAUDE.md'), 'utf8')
+const claudeMd = existsSync(path.join(repoRoot, '.claude', 'CLAUDE.md'))
+  ? readFileSync(path.join(repoRoot, '.claude', 'CLAUDE.md'), 'utf8')
   : '';
 const EXPECTED_SKILLS = [
   'superpowers:brainstorming',

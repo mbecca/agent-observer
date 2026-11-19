@@ -127,7 +127,7 @@ its own output is useful.
 
 ## Releasing
 
-Maintainers only. Read [docs/releasing.md](docs/releasing.md) before cutting
+Maintainers only. Read [docs/releasing.md](../docs/releasing.md) before cutting
 one; do not reconstruct the steps from memory.
 
 The part that is easy to get wrong: Claude Code caches the plugin under its

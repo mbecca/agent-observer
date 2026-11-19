@@ -1,6 +1,6 @@
 {
   "name": "agent-observer",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "See which subagents your coding agent ran, with which model, for which task. Works with Claude Code and OpenCode out of the box.",
   "keywords": [
     "claude-code",
@@ -38,10 +38,11 @@
     "opencode/",
     ".claude-plugin/",
     "docs/",
+    "assets/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "CLAUDE.md",
+    ".claude/CLAUDE.md",
     "AGENTS.md"
   ],
   "scripts": {

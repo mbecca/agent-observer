@@ -375,7 +375,7 @@ written in the real on-disk shape rather than against mocks.
 
 This project is developed with the [Superpowers](https://github.com/obra/superpowers)
 skills, which is fitting: it exists to report how orchestrators route models
-across subagents, so it is built by one. [CLAUDE.md](CLAUDE.md) tells a coding
+across subagents, so it is built by one. [CLAUDE.md](.claude/CLAUDE.md) tells a coding
 agent which skill to use at which point, and [AGENTS.md](AGENTS.md) states the
 same workflow for agents that do not have the plugin. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to get started.

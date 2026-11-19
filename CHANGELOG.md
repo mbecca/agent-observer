@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-19
+
+### Changed
+
+- The `/subagent-report` command no longer pre-approves `Bash`. Claude Code now
+  asks before each run, which the plugin directory requires of a publisher
+  whose organization is not verified.
+- The plugin declares an icon (`assets/icon.svg`).
+- `CLAUDE.md` moved from the repository root to `.claude/CLAUDE.md`. Claude Code
+  still loads it for contributors, but a `CLAUDE.md` at the plugin root fails
+  `claude plugin validate --strict` and the directory review.
+
 ## [0.5.1] - 2026-09-14
 
 ### Fixed
@@ -200,7 +212,8 @@ First release.
 - Cross-platform support on Windows, Linux and macOS with no runtime
   dependencies.
 
-[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/mbecca/agent-observer/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/mbecca/agent-observer/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mbecca/agent-observer/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mbecca/agent-observer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/mbecca/agent-observer/compare/v0.3.0...v0.4.0

@@ -1,7 +1,6 @@
 ---
 description: Report the subagents this session dispatched, with the model and task for each.
 argument-hint: "[current|tree|sessions|models|timeline|adapters|doctor|session <id>] [--since 7d] [--format md]"
-allowed-tools: Bash
 ---
 
 Report subagent activity using the bundled agent-observer tool.
