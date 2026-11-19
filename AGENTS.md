@@ -1,6 +1,6 @@
 # Agent instructions
 
-Read [CLAUDE.md](CLAUDE.md) first. Everything in it applies to you: the design
+Read [CLAUDE.md](.claude/CLAUDE.md) first. Everything in it applies to you: the design
 rules, the commands, the testing approach and the release process.
 
 This file covers the one part that does not transfer.

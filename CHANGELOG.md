@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format follows
   asks before each run, which the plugin directory requires of a publisher
   whose organization is not verified.
 - The plugin declares an icon (`assets/icon.svg`).
+- `CLAUDE.md` moved from the repository root to `.claude/CLAUDE.md`. Claude Code
+  still loads it for contributors, but a `CLAUDE.md` at the plugin root fails
+  `claude plugin validate --strict` and the directory review.
 
 ## [0.5.1] - 2026-09-14
 

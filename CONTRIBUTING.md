@@ -37,7 +37,7 @@ To do it by hand, or to check what you have:
 /plugin marketplace list
 ```
 
-[CLAUDE.md](CLAUDE.md) is loaded automatically and tells the agent which skill
+[CLAUDE.md](.claude/CLAUDE.md) is loaded automatically and tells the agent which skill
 to use at which point: brainstorming before design, a written plan before code,
 test-driven development while writing it, systematic debugging when something
 breaks, and a review before the pull request.

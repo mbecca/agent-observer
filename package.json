@@ -42,7 +42,7 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "CLAUDE.md",
+    ".claude/CLAUDE.md",
     "AGENTS.md"
   ],
   "scripts": {
